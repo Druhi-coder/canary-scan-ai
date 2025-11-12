@@ -10,6 +10,8 @@ export interface TestResult {
   };
   formData: any;
   topFeatures: string[];
+  medicalReport?: { text: string; fileName: string };
+  aiAnalysis?: string;
 }
 
 const STORAGE_KEY = 'canary_reports';

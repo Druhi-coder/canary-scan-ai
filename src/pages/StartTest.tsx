@@ -11,12 +11,15 @@ import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { generatePrediction, PredictionInput } from "@/lib/prediction";
 import { saveReport } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
+import { MedicalReportUpload } from "@/components/MedicalReportUpload";
+import { supabase } from "@/integrations/supabase/client";
 
 const StartTest = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [consentGiven, setConsentGiven] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadedReport, setUploadedReport] = useState<{ text: string; fileName: string } | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -155,6 +158,37 @@ const StartTest = () => {
     // Generate prediction
     const prediction = generatePrediction(predictionInput);
 
+    // Analyze medical report with AI if uploaded
+    let aiAnalysis = null;
+    if (uploadedReport) {
+      try {
+        toast({
+          title: "Analyzing Report",
+          description: "AI is analyzing your medical report...",
+        });
+
+        const { data, error } = await supabase.functions.invoke("analyze-medical-report", {
+          body: {
+            reportText: uploadedReport.text,
+            testResults: prediction,
+          },
+        });
+
+        if (error) {
+          console.error("AI analysis error:", error);
+          toast({
+            variant: "destructive",
+            title: "Analysis Error",
+            description: "Failed to analyze medical report. Continuing with CANary results only.",
+          });
+        } else {
+          aiAnalysis = data.analysis;
+        }
+      } catch (error) {
+        console.error("Error calling AI function:", error);
+      }
+    }
+
     // Save report
     const report = {
       id: Date.now().toString(),
@@ -162,6 +196,8 @@ const StartTest = () => {
       predictions: prediction,
       formData: formData,
       topFeatures: prediction.topFeatures,
+      medicalReport: uploadedReport,
+      aiAnalysis: aiAnalysis,
     };
     
     saveReport(report);
@@ -658,6 +694,13 @@ const StartTest = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Medical Report Upload Section */}
+          <MedicalReportUpload
+            onReportUploaded={(text, fileName) => setUploadedReport({ text, fileName })}
+            uploadedReport={uploadedReport}
+            onRemoveReport={() => setUploadedReport(null)}
+          />
 
           {/* Consent Section */}
           <Card>

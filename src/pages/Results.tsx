@@ -186,6 +186,35 @@ Report ID: ${report.id}
           </CardContent>
         </Card>
 
+        {/* Medical Report AI Analysis */}
+        {report.aiAnalysis && (
+          <Card className="mb-8 border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                Medical Report AI Analysis
+              </CardTitle>
+              <CardDescription>
+                Combined analysis of your medical report and CANary assessment
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none">
+                <div className="whitespace-pre-wrap text-foreground">
+                  {report.aiAnalysis}
+                </div>
+              </div>
+              {report.medicalReport && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Analyzed File:</strong> {report.medicalReport.fileName}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* QR Code & Actions */}
         <Card>
           <CardHeader>
