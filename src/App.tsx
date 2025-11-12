@@ -9,6 +9,7 @@ import Results from "./pages/Results";
 import MyReports from "./pages/MyReports";
 import ResearchMode from "./pages/ResearchMode";
 import About from "./pages/About";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/my-reports" element={<MyReports />} />
           <Route path="/research-mode" element={<ResearchMode />} />
           <Route path="/about" element={<About />} />
+          <Route path="/auth" element={<Auth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
