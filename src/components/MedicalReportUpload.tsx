@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, FileText, X } from "lucide-react";
+import { Upload, FileText, X, Wifi, WifiOff } from "lucide-react";
 import { toast } from "sonner";
+import { isOnline } from "@/lib/offlineAI";
 
 interface MedicalReportUploadProps {
   onReportUploaded: (reportText: string, fileName: string) => void;
@@ -18,6 +19,20 @@ export const MedicalReportUpload = ({
   onRemoveReport,
 }: MedicalReportUploadProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [online, setOnline] = useState(isOnline());
+  
+  useEffect(() => {
+    const handleOnline = () => setOnline(true);
+    const handleOffline = () => setOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -59,12 +74,28 @@ export const MedicalReportUpload = ({
   return (
     <Card className="border-primary/20">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          Upload Medical Report (Optional)
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Upload Medical Report (Optional)
+          </CardTitle>
+          <div className="flex items-center gap-2 text-sm">
+            {online ? (
+              <>
+                <Wifi className="h-4 w-4 text-green-500" />
+                <span className="text-green-500">Online - Full AI</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="h-4 w-4 text-orange-500" />
+                <span className="text-orange-500">Offline - Basic</span>
+              </>
+            )}
+          </div>
+        </div>
         <CardDescription>
-          Upload your blood test or medical report for personalized AI analysis combined with CANary assessment
+          Upload your blood test or medical report for AI analysis combined with CANary assessment.
+          {!online && " (Offline mode: basic keyword analysis will be used)"}
         </CardDescription>
       </CardHeader>
       <CardContent>

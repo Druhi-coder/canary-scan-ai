@@ -13,6 +13,7 @@ import { saveReport } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import { MedicalReportUpload } from "@/components/MedicalReportUpload";
 import { supabase } from "@/integrations/supabase/client";
+import { isOnline, analyzeReportOffline } from "@/lib/offlineAI";
 
 const StartTest = () => {
   const navigate = useNavigate();
@@ -162,30 +163,52 @@ const StartTest = () => {
     let aiAnalysis = null;
     if (uploadedReport) {
       try {
-        toast({
-          title: "Analyzing Report",
-          description: "AI is analyzing your medical report...",
-        });
-
-        const { data, error } = await supabase.functions.invoke("analyze-medical-report", {
-          body: {
-            reportText: uploadedReport.text,
-            testResults: prediction,
-          },
-        });
-
-        if (error) {
-          console.error("AI analysis error:", error);
+        const online = isOnline();
+        
+        if (online) {
+          // Use cloud AI for better analysis when online
           toast({
-            variant: "destructive",
-            title: "Analysis Error",
-            description: "Failed to analyze medical report. Continuing with CANary results only.",
+            title: "Analyzing Report",
+            description: "AI is analyzing your medical report...",
           });
+
+          const { data, error } = await supabase.functions.invoke("analyze-medical-report", {
+            body: {
+              reportText: uploadedReport.text,
+              testResults: prediction,
+            },
+          });
+
+          if (error) {
+            console.error("AI analysis error:", error);
+            // Fallback to offline analysis
+            aiAnalysis = await analyzeReportOffline(uploadedReport.text, formData);
+            toast({
+              title: "Using Offline Analysis",
+              description: "Cloud AI unavailable, using offline analysis instead.",
+            });
+          } else {
+            aiAnalysis = data.analysis;
+          }
         } else {
-          aiAnalysis = data.analysis;
+          // Use offline AI analysis
+          toast({
+            title: "Analyzing Offline",
+            description: "Using offline analysis...",
+          });
+          aiAnalysis = await analyzeReportOffline(uploadedReport.text, formData);
+          toast({
+            title: "Offline Analysis Complete",
+            description: "Basic analysis completed. Connect to internet for detailed AI insights.",
+          });
         }
       } catch (error) {
-        console.error("Error calling AI function:", error);
+        console.error("Error analyzing report:", error);
+        toast({
+          variant: "destructive",
+          title: "Analysis Warning",
+          description: "Could not analyze medical report, but your test results are ready.",
+        });
       }
     }
 
