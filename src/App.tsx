@@ -8,6 +8,7 @@ import StartTest from "./pages/StartTest";
 import Results from "./pages/Results";
 import MyReports from "./pages/MyReports";
 import ResearchMode from "./pages/ResearchMode";
+import Research from "./pages/Research";
 import About from "./pages/About";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -26,6 +27,8 @@ const App = () => (
           <Route path="/results" element={<Results />} />
           <Route path="/my-reports" element={<MyReports />} />
           <Route path="/research-mode" element={<ResearchMode />} />
+          <Route path="/research" element={<Research />} />
+          <Route path="/how-it-works" element={<Research />} />
           <Route path="/about" element={<About />} />
           <Route path="/auth" element={<Auth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
