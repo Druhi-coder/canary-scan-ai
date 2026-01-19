@@ -378,8 +378,12 @@ export const generateJSONReport = (report: TestResult): string => {
 /**
  * Downloads the report as a file
  */
-export const downloadReport = (content: string, filename: string, type: 'text' | 'json'): void => {
+export const downloadReport = (report: TestResult, type: 'text' | 'json'): void => {
+  const content = type === 'json' ? generateJSONReport(report) : generateTextReport(report);
   const mimeType = type === 'json' ? 'application/json' : 'text/plain';
+  const extension = type === 'json' ? 'json' : 'txt';
+  const filename = `CANary-Report-${new Date(report.date).toISOString().split('T')[0]}.${extension}`;
+  
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

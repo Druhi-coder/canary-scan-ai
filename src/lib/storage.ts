@@ -1,15 +1,20 @@
 // Local storage utilities for CANary reports
 
+import { RiskFactor, DebugData, CancerRiskResult } from './predictionEngine';
+
 export interface TestResult {
   id: string;
   date: string;
   predictions: {
-    pancreatic: { probability: number; confidence: string };
-    colon: { probability: number; confidence: string };
-    blood: { probability: number; confidence: string };
+    pancreatic: CancerRiskResult;
+    colon: CancerRiskResult;
+    blood: CancerRiskResult;
   };
   formData: any;
+  input?: any; // PredictionInput
   topFeatures: string[];
+  rankedFactors?: RiskFactor[];
+  debugData?: DebugData;
   medicalReport?: { text: string; fileName: string };
   aiAnalysis?: string;
 }

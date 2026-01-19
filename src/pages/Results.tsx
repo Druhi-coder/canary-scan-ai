@@ -2,10 +2,15 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { QRCodeSVG } from "qrcode.react";
-import { ArrowLeft, Download, Share2, AlertCircle, TrendingUp, Activity } from "lucide-react";
+import { ArrowLeft, Download, Share2, AlertCircle, TrendingUp, Activity, FileText, FileJson } from "lucide-react";
 import { TestResult } from "@/lib/storage";
+import { RiskCard } from "@/components/RiskCard";
+import { FactorsList } from "@/components/FactorsList";
+import { DebugPanel } from "@/components/DebugPanel";
+import { downloadReport, convertToExportable } from "@/lib/reportExport";
+import { CancerRiskResult, RiskFactor, DebugData } from "@/lib/predictionEngine";
 
 const Results = () => {
   const location = useLocation();
@@ -28,64 +33,78 @@ const Results = () => {
     );
   }
 
+  // Extract predictions with IEEE-ready structure
+  const predictions = report.predictions;
+  const rankedFactors: RiskFactor[] = report.rankedFactors || [];
+  const debugData: DebugData | undefined = report.debugData;
+
+  // Helper to generate default explanation
+  const generateDefaultExplanation = (cancer: string, probability: number): string => {
+    if (probability < 0.3) {
+      return `Your ${cancer} cancer risk is within the low range based on the factors provided.`;
+    } else if (probability < 0.6) {
+      return `Your ${cancer} cancer risk is moderate. Consider discussing with a healthcare provider.`;
+    }
+    return `Your ${cancer} cancer risk is elevated. Please consult a healthcare professional promptly.`;
+  };
+
+  // Helper to create CancerRiskResult from legacy or new format
+  const getCancerResult = (cancer: 'pancreatic' | 'colon' | 'blood'): CancerRiskResult => {
+    const pred = predictions[cancer];
+    return {
+      probability: pred.probability,
+      confidence: pred.confidence as 'Low' | 'Medium' | 'High',
+      riskLabel: (pred as any).riskLabel || (pred.probability < 0.3 ? 'Low' : pred.probability < 0.6 ? 'Medium' : 'High'),
+      explanation: (pred as any).explanation || generateDefaultExplanation(cancer, pred.probability),
+      rawScore: (pred as any).rawScore || pred.probability,
+    };
+  };
+
   const getRiskColor = (probability: number) => {
     if (probability < 0.3) return "hsl(var(--success-green))";
     if (probability < 0.6) return "hsl(var(--warning-yellow))";
     return "hsl(var(--danger-red))";
   };
 
-  const getRiskLabel = (probability: number) => {
-    if (probability < 0.3) return "Low Risk";
-    if (probability < 0.6) return "Medium Risk";
-    return "High Risk";
-  };
+  // Chart data
+  const pieChartData = [
+    { name: "Pancreatic", value: predictions.pancreatic.probability * 100 },
+    { name: "Colon", value: predictions.colon.probability * 100 },
+    { name: "Blood", value: predictions.blood.probability * 100 },
+  ];
 
-  const chartData = [
-    { name: "Pancreatic", value: report.predictions.pancreatic.probability * 100 },
-    { name: "Colon", value: report.predictions.colon.probability * 100 },
-    { name: "Blood", value: report.predictions.blood.probability * 100 },
+  const barChartData = [
+    { 
+      name: "Pancreatic", 
+      risk: predictions.pancreatic.probability * 100,
+      fill: getRiskColor(predictions.pancreatic.probability)
+    },
+    { 
+      name: "Colon", 
+      risk: predictions.colon.probability * 100,
+      fill: getRiskColor(predictions.colon.probability)
+    },
+    { 
+      name: "Blood", 
+      risk: predictions.blood.probability * 100,
+      fill: getRiskColor(predictions.blood.probability)
+    },
   ];
 
   const COLORS = [
-    getRiskColor(report.predictions.pancreatic.probability),
-    getRiskColor(report.predictions.colon.probability),
-    getRiskColor(report.predictions.blood.probability),
+    getRiskColor(predictions.pancreatic.probability),
+    getRiskColor(predictions.colon.probability),
+    getRiskColor(predictions.blood.probability),
   ];
 
   const reportUrl = `${window.location.origin}/my-reports?id=${report.id}`;
 
-  const handleDownloadReport = () => {
-    const reportContent = `
-CANary Cancer Detection Report
-Generated: ${new Date(report.date).toLocaleString()}
+  const handleDownloadText = () => {
+    downloadReport(report, 'text');
+  };
 
-RISK ASSESSMENT
-================
-Pancreatic Cancer: ${(report.predictions.pancreatic.probability * 100).toFixed(1)}% (${report.predictions.pancreatic.confidence} confidence)
-Colon Cancer: ${(report.predictions.colon.probability * 100).toFixed(1)}% (${report.predictions.colon.confidence} confidence)
-Blood Cancer: ${(report.predictions.blood.probability * 100).toFixed(1)}% (${report.predictions.blood.confidence} confidence)
-
-KEY INFLUENCING FACTORS
-========================
-${report.topFeatures.map((f, i) => `${i + 1}. ${f}`).join('\n')}
-
-DISCLAIMER
-===========
-These results are generated by an AI research tool and should not be considered a medical diagnosis. 
-Please consult a healthcare professional for proper medical evaluation.
-
-Report ID: ${report.id}
-    `.trim();
-
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `CANary-Report-${report.date}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleDownloadJSON = () => {
+    downloadReport(report, 'json');
   };
 
   return (
@@ -102,89 +121,120 @@ Report ID: ${report.id}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-3">Your CANary Results</h1>
           <p className="text-muted-foreground">
-            Analysis completed on {new Date(report.date).toLocaleDateString()}
+            Analysis completed on {new Date(report.date).toLocaleDateString()} at {new Date(report.date).toLocaleTimeString()}
           </p>
         </div>
 
         <Alert className="mb-8 bg-accent border-primary">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            <strong>Disclaimer:</strong> These results are generated by an AI research tool and should not be 
+            <strong>Disclaimer:</strong> These results are generated by an AI research tool and represent 
+            <strong> screening risk estimates</strong>, not diagnostic probabilities. They should not be 
             considered a medical diagnosis. Please consult a healthcare professional for proper medical evaluation.
           </AlertDescription>
         </Alert>
 
-        {/* Risk Overview Cards */}
+        {/* Risk Overview Cards - Using new RiskCard component */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <RiskCard
             title="Pancreatic Cancer"
-            probability={report.predictions.pancreatic.probability}
-            confidence={report.predictions.pancreatic.confidence}
+            result={getCancerResult('pancreatic')}
           />
           <RiskCard
             title="Colon Cancer"
-            probability={report.predictions.colon.probability}
-            confidence={report.predictions.colon.confidence}
+            result={getCancerResult('colon')}
           />
           <RiskCard
             title="Blood Cancer"
-            probability={report.predictions.blood.probability}
-            confidence={report.predictions.blood.confidence}
+            result={getCancerResult('blood')}
           />
         </div>
 
-        {/* Visualization */}
+        {/* Risk Distribution Visualization */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Risk Distribution</CardTitle>
-            <CardDescription>Comparative analysis across cancer types</CardDescription>
+            <CardDescription>
+              Comparative analysis across cancer types. These are <strong>screening risk estimates</strong> based on 
+              your profile, not diagnostic probabilities. The visualization helps compare relative risk levels.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }: any) => `${name}: ${Number(value).toFixed(1)}%`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value: any) => `${Number(value).toFixed(1)}%`} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Pie Chart */}
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-4 text-center">Proportional View</h4>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={pieChartData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }: any) => `${name}: ${Number(value).toFixed(1)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {pieChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: any) => `${Number(value).toFixed(1)}%`} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Bar Chart */}
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-4 text-center">Risk Comparison</h4>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={barChartData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" domain={[0, 100]} unit="%" />
+                    <YAxis type="category" dataKey="name" width={80} />
+                    <Tooltip formatter={(value: any) => `${Number(value).toFixed(1)}%`} />
+                    <Bar dataKey="risk" fill="#8884d8">
+                      {barChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        {/* AI Interpretation */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              AI Interpretation
-            </CardTitle>
-            <CardDescription>Top factors influencing your results</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              {report.topFeatures.map((feature, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
-                    {index + 1}
-                  </span>
-                  <span className="text-foreground">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        {/* AI Interpretation - Using new FactorsList component */}
+        {rankedFactors && rankedFactors.length > 0 ? (
+          <div className="mb-8">
+            <FactorsList factors={rankedFactors} maxFactors={8} />
+          </div>
+        ) : (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                AI Interpretation
+              </CardTitle>
+              <CardDescription>Top factors influencing your results</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {report.topFeatures?.map((feature, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                      {index + 1}
+                    </span>
+                    <span className="text-foreground">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Medical Report AI Analysis */}
         {report.aiAnalysis && (
@@ -215,45 +265,23 @@ Report ID: ${report.id}
           </Card>
         )}
 
-        {/* QR Code & Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Share2 className="h-5 w-5" />
-              Share & Save Report
-            </CardTitle>
-            <CardDescription>Access your report anytime</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-center">
-              <div className="bg-white p-4 rounded-lg inline-block mb-3">
-                <QRCodeSVG value={reportUrl} size={150} />
-              </div>
-              <p className="text-sm text-muted-foreground">Scan to view all reports</p>
-            </div>
-            <div className="flex flex-col gap-3">
-              <Button onClick={() => navigate("/my-reports")} className="gap-2">
-                <TrendingUp className="h-4 w-4" />
-                View All Reports
-              </Button>
-              <Button variant="outline" onClick={handleDownloadReport} className="gap-2">
-                <Download className="h-4 w-4" />
-                Download Report
-              </Button>
-              <Button variant="outline" onClick={() => navigate("/start-test")}>
-                Take Another Test
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Debug Panel for Researchers */}
+        {debugData && (
+          <div className="mb-8">
+            <DebugPanel debugData={debugData} />
+          </div>
+        )}
 
         {/* What to Do Next */}
-        <Card className="mt-8">
+        <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              What to Do After Receiving This Report
+              What Should I Do Next?
             </CardTitle>
+            <CardDescription>
+              Recommended actions based on your screening results
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -294,7 +322,7 @@ Report ID: ${report.id}
               <h4 className="font-semibold mb-2 text-primary">4. Monitor and Retest</h4>
               <p className="text-sm text-muted-foreground">
                 Take another CANary test in 3-6 months to track changes in your risk profile. Keep a record 
-                of all your reports in the "My Reports" section.
+                of all your reports in the "My Reports" section to observe trends over time.
               </p>
             </div>
 
@@ -307,47 +335,44 @@ Report ID: ${report.id}
             </Alert>
           </CardContent>
         </Card>
+
+        {/* QR Code & Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Share2 className="h-5 w-5" />
+              Share & Save Report
+            </CardTitle>
+            <CardDescription>Access your report anytime or export for research</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-center">
+              <div className="bg-white p-4 rounded-lg inline-block mb-3">
+                <QRCodeSVG value={reportUrl} size={150} />
+              </div>
+              <p className="text-sm text-muted-foreground">Scan to view all reports</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Button onClick={() => navigate("/my-reports")} className="gap-2">
+                <TrendingUp className="h-4 w-4" />
+                View All Reports
+              </Button>
+              <Button variant="outline" onClick={handleDownloadText} className="gap-2">
+                <FileText className="h-4 w-4" />
+                Download Text Report
+              </Button>
+              <Button variant="outline" onClick={handleDownloadJSON} className="gap-2">
+                <FileJson className="h-4 w-4" />
+                Download JSON (Research)
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/start-test")}>
+                Take Another Test
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
-};
-
-const RiskCard = ({ 
-  title, 
-  probability, 
-  confidence 
-}: { 
-  title: string; 
-  probability: number; 
-  confidence: string 
-}) => {
-  const getRiskColor = (prob: number) => {
-    if (prob < 0.3) return "bg-success-green";
-    if (prob < 0.6) return "bg-warning-yellow";
-    return "bg-danger-red";
-  };
-
-  const getRiskLabel = (prob: number) => {
-    if (prob < 0.3) return "Low Risk";
-    if (prob < 0.6) return "Medium Risk";
-    return "High Risk";
-  };
-
-  const percentage = (probability * 100).toFixed(1);
-
-  return (
-    <Card className="text-center">
-      <CardHeader>
-        <CardTitle className="text-lg">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className={`w-24 h-24 mx-auto rounded-full ${getRiskColor(probability)} flex items-center justify-center mb-4`}>
-          <span className="text-3xl font-bold text-white">{percentage}%</span>
-        </div>
-        <p className="font-semibold text-lg mb-1">{getRiskLabel(probability)}</p>
-        <p className="text-sm text-muted-foreground">Confidence: {confidence}</p>
-      </CardContent>
-    </Card>
   );
 };
 
