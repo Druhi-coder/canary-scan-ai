@@ -1,181 +1,139 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileText, Trash2, Calendar, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Plus, Trash2, Calendar, TrendingUp, TrendingDown, Minus, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { getReports, deleteReport, TestResult } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
-import { QRCodeSVG } from "qrcode.react";
+import { CancerRiskResult } from "@/lib/predictionEngine";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
+interface TrendIndicator { direction: 'up' | 'down' | 'stable'; change: number; }
+
+const calculateTrends = (current: TestResult, previous: TestResult | null) => {
+  if (!previous) return { pancreatic: null, colon: null, blood: null };
+  const calcTrend = (curr: CancerRiskResult | undefined, prev: CancerRiskResult | undefined): TrendIndicator | null => {
+    if (!curr || !prev) return null;
+    const change = curr.probability - prev.probability;
+    if (Math.abs(change) < 2) return { direction: 'stable', change: 0 };
+    return { direction: change > 0 ? 'up' : 'down', change: Math.round(Math.abs(change)) };
+  };
+  return {
+    pancreatic: calcTrend(current.predictions?.pancreatic, previous.predictions?.pancreatic),
+    colon: calcTrend(current.predictions?.colon, previous.predictions?.colon),
+    blood: calcTrend(current.predictions?.blood, previous.predictions?.blood),
+  };
+};
+
+const TrendBadge = ({ trend, label }: { trend: TrendIndicator | null; label: string }) => {
+  if (!trend) return <Badge variant="outline" className="text-muted-foreground">{label}: First Test</Badge>;
+  if (trend.direction === 'stable') return <Badge variant="outline" className="bg-muted/50"><Minus className="h-3 w-3 mr-1" />{label}: Stable</Badge>;
+  if (trend.direction === 'up') return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20"><TrendingUp className="h-3 w-3 mr-1" />{label}: +{trend.change}%</Badge>;
+  return <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20"><TrendingDown className="h-3 w-3 mr-1" />{label}: -{trend.change}%</Badge>;
+};
+
+const getRiskSummary = (predictions: TestResult['predictions']) => {
+  if (!predictions) return { label: 'Unknown', variant: 'secondary' as const };
+  const maxRisk = Math.max(predictions.pancreatic?.probability ?? 0, predictions.colon?.probability ?? 0, predictions.blood?.probability ?? 0);
+  if (maxRisk >= 60) return { label: 'High Risk', variant: 'destructive' as const };
+  if (maxRisk >= 30) return { label: 'Medium Risk', variant: 'secondary' as const };
+  return { label: 'Low Risk', variant: 'outline' as const };
+};
 
 const MyReports = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [reports, setReports] = useState<TestResult[]>([]);
+  const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    loadReports();
-  }, []);
+  useEffect(() => { loadReports(); }, []);
 
   const loadReports = () => {
     const storedReports = getReports();
-    setReports(storedReports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    storedReports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    setReports(storedReports);
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this report?")) {
-      deleteReport(id);
-      loadReports();
-      toast({
-        title: "Report Deleted",
-        description: "The report has been removed from your history.",
-      });
-    }
+    deleteReport(id);
+    loadReports();
+    toast({ title: "Report Deleted", description: "The report has been removed." });
   };
 
-  const getRiskSummary = (predictions: TestResult["predictions"]) => {
-    const risks = [
-      { name: "Pancreatic", value: predictions.pancreatic.probability },
-      { name: "Colon", value: predictions.colon.probability },
-      { name: "Blood", value: predictions.blood.probability },
-    ];
-    
-    const highest = risks.reduce((prev, current) => 
-      current.value > prev.value ? current : prev
-    );
-    
-    if (highest.value < 0.3) return { label: "All Low Risk", color: "text-success-green" };
-    if (highest.value < 0.6) return { label: `${highest.name} - Medium Risk`, color: "text-warning-yellow" };
-    return { label: `${highest.name} - High Risk`, color: "text-danger-red" };
-  };
+  const toggleExpanded = (id: string) => setExpandedReports(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const getPreviousReport = (index: number) => index < reports.length - 1 ? reports[index + 1] : null;
+  const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="min-h-screen bg-background pb-16">
-      <header className="border-b border-border bg-card sticky top-0 z-50">
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate("/")} className="gap-2">
-            <ArrowLeft className="h-4 w-4" /> Back to Home
-          </Button>
-          <Button onClick={() => navigate("/start-test")}>New Test</Button>
+          <Button variant="ghost" onClick={() => navigate('/')} className="gap-2"><ArrowLeft className="h-4 w-4" />Back</Button>
+          <Button onClick={() => navigate('/start-test')} className="gap-2"><Plus className="h-4 w-4" />New Test</Button>
         </div>
       </header>
-
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-3">My Reports</h1>
-          <p className="text-muted-foreground">
-            {reports.length} {reports.length === 1 ? "report" : "reports"} stored locally
-          </p>
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8"><h1 className="text-3xl font-bold text-foreground mb-2">My Reports</h1><p className="text-muted-foreground">{reports.length} {reports.length === 1 ? 'report' : 'reports'} stored</p></div>
+          {reports.length === 0 ? (
+            <Card className="text-center py-12"><CardContent><FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><h3 className="text-lg font-semibold mb-2">No Reports Yet</h3><p className="text-muted-foreground mb-6">Complete your first screening.</p><Button onClick={() => navigate('/start-test')}>Start Test</Button></CardContent></Card>
+          ) : (
+            <div className="space-y-4">
+              {reports.map((report, index) => {
+                const trends = calculateTrends(report, getPreviousReport(index));
+                const riskSummary = getRiskSummary(report.predictions);
+                const isExpanded = expandedReports.has(report.id);
+                return (
+                  <Card key={report.id}>
+                    <Collapsible open={isExpanded} onOpenChange={() => toggleExpanded(report.id)}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2"><Calendar className="h-4 w-4 text-muted-foreground" /><span className="font-medium">{formatDate(report.date)}</span><Badge variant={riskSummary.variant}>{riskSummary.label}</Badge>{index === 0 && <Badge variant="secondary" className="bg-primary/10 text-primary">Latest</Badge>}</div>
+                            <div className="flex flex-wrap gap-2 mt-3"><TrendBadge trend={trends.pancreatic} label="Pancreatic" /><TrendBadge trend={trends.colon} label="Colon" /><TrendBadge trend={trends.blood} label="Blood" /></div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CollapsibleTrigger asChild><Button variant="ghost" size="sm">{isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</Button></CollapsibleTrigger>
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(report.id)} className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CollapsibleContent>
+                        <CardContent className="pt-0">
+                          <div className="grid md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                              <h4 className="font-semibold text-sm text-muted-foreground uppercase">Risk Breakdown</h4>
+                              {['pancreatic', 'colon', 'blood'].map(type => {
+                                const pred = report.predictions?.[type as keyof typeof report.predictions];
+                                return (
+                                  <div key={type} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                                    <div><span className="font-medium capitalize">{type} Cancer</span><div className="text-sm text-muted-foreground">Confidence: {pred?.confidence || 'N/A'}</div></div>
+                                    <div className="text-right"><span className="text-2xl font-bold">{pred?.probability ?? '--'}%</span><Badge variant="outline" className="ml-2">{pred?.riskLabel || 'N/A'}</Badge></div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="space-y-4">
+                              {report.rankedFactors && report.rankedFactors.length > 0 && (
+                                <div><h4 className="font-semibold text-sm text-muted-foreground uppercase mb-3">Key Factors</h4><div className="space-y-2">{report.rankedFactors.slice(0, 5).map((f, i) => <div key={i} className={`text-sm p-2 rounded ${f.impact === 'increases' ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-600'}`}>{f.impact === 'increases' ? '↑' : '↓'} {f.name}</div>)}</div></div>
+                              )}
+                              <div className="flex flex-col items-center p-4 bg-card border border-border rounded-lg"><p className="text-xs text-muted-foreground mb-2">Scan to share</p><QRCodeSVG value={`${window.location.origin}/results?id=${report.id}`} size={80} level="M" /></div>
+                            </div>
+                          </div>
+                          {index === 0 && reports.length > 1 && <div className="mt-6 p-4 bg-muted/50 rounded-lg"><p className="text-sm text-muted-foreground"><strong>Trend Analysis:</strong> Comparing to previous test from {formatDate(reports[1].date)}. ↑ = increased risk, ↓ = improvement.</p></div>}
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+          <div className="mt-8 p-4 bg-muted/50 rounded-lg"><p className="text-sm text-muted-foreground text-center"><strong>Disclaimer:</strong> For research purposes only. Consult a healthcare professional for diagnosis.</p></div>
         </div>
-
-        {reports.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2">No Reports Yet</h3>
-              <p className="text-muted-foreground mb-6">
-                Take your first CANary scan to see results here
-              </p>
-              <Button onClick={() => navigate("/start-test")}>Start First Test</Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-6">
-            {reports.map((report) => {
-              const summary = getRiskSummary(report.predictions);
-              const reportUrl = `${window.location.origin}/my-reports`;
-              
-              return (
-                <Card key={report.id} className="overflow-hidden">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="flex items-center gap-2 mb-2">
-                          <Calendar className="h-5 w-5 text-primary" />
-                          {new Date(report.date).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </CardTitle>
-                        <CardDescription className={`font-semibold ${summary.color}`}>
-                          {summary.label}
-                        </CardDescription>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(report.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid md:grid-cols-4 gap-6 items-start">
-                      {/* Risk Percentages */}
-                      <div className="md:col-span-3 grid grid-cols-3 gap-4">
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground mb-1">Pancreatic</p>
-                          <p className="text-2xl font-bold">
-                            {(report.predictions.pancreatic.probability * 100).toFixed(1)}%
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {report.predictions.pancreatic.confidence}
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground mb-1">Colon</p>
-                          <p className="text-2xl font-bold">
-                            {(report.predictions.colon.probability * 100).toFixed(1)}%
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {report.predictions.colon.confidence}
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground mb-1">Blood</p>
-                          <p className="text-2xl font-bold">
-                            {(report.predictions.blood.probability * 100).toFixed(1)}%
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {report.predictions.blood.confidence}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* QR Code */}
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="bg-white p-2 rounded">
-                          <QRCodeSVG value={reportUrl} size={80} />
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">Share Report</p>
-                      </div>
-                    </div>
-
-                    {/* Top Features */}
-                    {report.topFeatures && report.topFeatures.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-border">
-                        <p className="text-sm font-semibold mb-2 flex items-center gap-2">
-                          <AlertCircle className="h-4 w-4" />
-                          Key Risk Factors:
-                        </p>
-                        <ul className="text-sm text-muted-foreground space-y-1">
-                          {report.topFeatures.slice(0, 3).map((feature, idx) => (
-                            <li key={idx}>• {feature}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      </main>
     </div>
   );
 };
