@@ -19,6 +19,17 @@ export interface TestResult {
     labValues: Record<string, number | undefined>;
     lifestyle: Record<string, string>;
   };
+  // Form data for research mode and export
+  formData?: Record<string, any>;
+  // Legacy fields for backwards compatibility
+  topFeatures?: string[];
+  aiAnalysis?: string;
+  medicalReport?: {
+    fileName: string;
+    fileType?: string;
+    uploadedAt?: string;
+    text?: string;
+  };
 }
 
 const STORAGE_KEY = 'canary_reports';
