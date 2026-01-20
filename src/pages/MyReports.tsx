@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Trash2, Calendar, TrendingUp, TrendingDown, Minus, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Calendar, TrendingUp, TrendingDown, Minus, FileText, ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { getReports, deleteReport, TestResult } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import { CancerRiskResult } from "@/lib/predictionEngine";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import RiskTrendChart from "@/components/RiskTrendChart";
 
 interface TrendIndicator { direction: 'up' | 'down' | 'stable'; change: number; }
 
@@ -76,10 +77,18 @@ const MyReports = () => {
       </header>
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8"><h1 className="text-3xl font-bold text-foreground mb-2">My Reports</h1><p className="text-muted-foreground">{reports.length} {reports.length === 1 ? 'report' : 'reports'} stored</p></div>
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-2">
+              <BarChart3 className="h-8 w-8 text-primary" />
+              <h1 className="text-3xl font-bold text-foreground">My Reports</h1>
+            </div>
+            <p className="text-muted-foreground">{reports.length} {reports.length === 1 ? 'report' : 'reports'} stored • Track your risk trends over time</p>
+          </div>
           {reports.length === 0 ? (
             <Card className="text-center py-12"><CardContent><FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><h3 className="text-lg font-semibold mb-2">No Reports Yet</h3><p className="text-muted-foreground mb-6">Complete your first screening.</p><Button onClick={() => navigate('/start-test')}>Start Test</Button></CardContent></Card>
           ) : (
+            <>
+              <RiskTrendChart reports={reports} />
             <div className="space-y-4">
               {reports.map((report, index) => {
                 const trends = calculateTrends(report, getPreviousReport(index));
@@ -129,7 +138,8 @@ const MyReports = () => {
                   </Card>
                 );
               })}
-            </div>
+              </div>
+            </>
           )}
           <div className="mt-8 p-4 bg-muted/50 rounded-lg"><p className="text-sm text-muted-foreground text-center"><strong>Disclaimer:</strong> For research purposes only. Consult a healthcare professional for diagnosis.</p></div>
         </div>
