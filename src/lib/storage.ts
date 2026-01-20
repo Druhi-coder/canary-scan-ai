@@ -1,6 +1,4 @@
-// Local storage utilities for CANary reports
-
-import { RiskFactor, DebugData, CancerRiskResult } from './predictionEngine';
+import { CancerRiskResult, RiskFactor, DebugData } from './predictionEngine';
 
 export interface TestResult {
   id: string;
@@ -10,31 +8,43 @@ export interface TestResult {
     colon: CancerRiskResult;
     blood: CancerRiskResult;
   };
-  formData: any;
-  input?: any; // PredictionInput
-  topFeatures: string[];
   rankedFactors?: RiskFactor[];
   debugData?: DebugData;
-  medicalReport?: { text: string; fileName: string };
-  aiAnalysis?: string;
+  inputSummary?: {
+    age: number;
+    gender: string;
+    bmi: number;
+    bloodGroup: string;
+    keySymptoms: string[];
+    labValues: Record<string, number | undefined>;
+    lifestyle: Record<string, string>;
+  };
 }
 
 const STORAGE_KEY = 'canary_reports';
+
+export const generateId = (): string => {
+  return `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
+export const getReports = (): TestResult[] => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return [];
+    return JSON.parse(stored);
+  } catch {
+    return [];
+  }
+};
+
+export const getReportById = (id: string): TestResult | null => {
+  return getReports().find(r => r.id === id) || null;
+};
 
 export const saveReport = (report: TestResult): void => {
   const reports = getReports();
   reports.push(report);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
-};
-
-export const getReports = (): TestResult[] => {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
-};
-
-export const getReportById = (id: string): TestResult | undefined => {
-  const reports = getReports();
-  return reports.find(r => r.id === id);
 };
 
 export const deleteReport = (id: string): void => {
@@ -45,3 +55,12 @@ export const deleteReport = (id: string): void => {
 export const clearAllReports = (): void => {
   localStorage.removeItem(STORAGE_KEY);
 };
+
+export const getLatestReport = (): TestResult | null => {
+  const reports = getReports();
+  if (reports.length === 0) return null;
+  reports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  return reports[0];
+};
+
+export const getReportCount = (): number => getReports().length;
