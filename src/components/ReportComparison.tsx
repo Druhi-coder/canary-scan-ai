@@ -1,8 +1,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, ArrowRight } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, ArrowRight, Download } from "lucide-react";
 import { TestResult } from "@/lib/storage";
+import { generateComparisonPDF } from "@/lib/pdfExport";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReportComparisonProps {
   isOpen: boolean;
@@ -33,6 +36,8 @@ const getDiffBadge = (diff: number) => {
 };
 
 export const ReportComparison = ({ isOpen, onClose, reportA, reportB }: ReportComparisonProps) => {
+  const { toast } = useToast();
+  
   if (!reportA || !reportB) return null;
 
   const cancerTypes = ['pancreatic', 'colon', 'blood'] as const;
@@ -50,16 +55,26 @@ export const ReportComparison = ({ isOpen, onClose, reportA, reportB }: ReportCo
 
   const factorChanges = getFactorChanges();
 
+  const handleExportPDF = () => {
+    generateComparisonPDF(reportA, reportB);
+    toast({ title: "PDF Exported", description: "Comparison saved to PDF." });
+  };
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            Report Comparison
-            <Badge variant="secondary">{formatDate(reportA.date)}</Badge>
-            <ArrowRight className="h-4 w-4" />
-            <Badge variant="secondary">{formatDate(reportB.date)}</Badge>
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              Report Comparison
+              <Badge variant="secondary">{formatDate(reportA.date)}</Badge>
+              <ArrowRight className="h-4 w-4" />
+              <Badge variant="secondary">{formatDate(reportB.date)}</Badge>
+            </DialogTitle>
+            <Button variant="outline" size="sm" onClick={handleExportPDF} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export PDF
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">
