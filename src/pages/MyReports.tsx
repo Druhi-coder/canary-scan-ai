@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowLeft, Plus, Trash2, Calendar, TrendingUp, TrendingDown, Minus, FileText, ChevronDown, ChevronUp, BarChart3, GitCompare, Filter, X } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Calendar, TrendingUp, TrendingDown, Minus, FileText, ChevronDown, ChevronUp, BarChart3, GitCompare, Filter, X, Download } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { getReports, deleteReport, TestResult } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +16,7 @@ import RiskTrendChart from "@/components/RiskTrendChart";
 import { ReportComparison } from "@/components/ReportComparison";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { generateFilteredReportsPDF, generateComparisonPDF } from "@/lib/pdfExport";
 
 interface TrendIndicator { direction: 'up' | 'down' | 'stable'; change: number; }
 
@@ -121,6 +122,22 @@ const MyReports = () => {
     setIsCompareOpen(true);
   };
 
+  const handleExportPDF = () => {
+    if (filteredReports.length === 0) {
+      toast({ title: "No Reports", description: "No reports to export." });
+      return;
+    }
+    generateFilteredReportsPDF(filteredReports, { from: dateFrom, to: dateTo });
+    toast({ title: "PDF Exported", description: `Exported ${filteredReports.length} reports.` });
+  };
+
+  const handleExportComparisonPDF = () => {
+    if (reportA && reportB) {
+      generateComparisonPDF(reportA, reportB);
+      toast({ title: "Comparison PDF Exported", description: "Your comparison has been saved." });
+    }
+  };
+
   const getCompareReports = () => {
     const [idA, idB] = selectedForCompare;
     const reportA = reports.find(r => r.id === idA);
@@ -210,6 +227,12 @@ const MyReports = () => {
               <Button variant="outline" onClick={handleCompare} className="gap-2">
                 <GitCompare className="h-4 w-4" />
                 Compare Selected
+              </Button>
+            )}
+            {filteredReports.length > 0 && (
+              <Button variant="outline" onClick={handleExportPDF} className="gap-2">
+                <Download className="h-4 w-4" />
+                Export PDF
               </Button>
             )}
             <Button onClick={() => navigate('/start-test')} className="gap-2"><Plus className="h-4 w-4" />New Test</Button>
