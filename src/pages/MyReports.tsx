@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Plus, Trash2, Calendar, TrendingUp, TrendingDown, Minus, FileText, ChevronDown, ChevronUp, BarChart3, GitCompare } from "lucide-react";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ArrowLeft, Plus, Trash2, Calendar, TrendingUp, TrendingDown, Minus, FileText, ChevronDown, ChevronUp, BarChart3, GitCompare, Filter, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { getReports, deleteReport, TestResult } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +14,8 @@ import { CancerRiskResult } from "@/lib/predictionEngine";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import RiskTrendChart from "@/components/RiskTrendChart";
 import { ReportComparison } from "@/components/ReportComparison";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface TrendIndicator { direction: 'up' | 'down' | 'stable'; change: number; }
 
@@ -51,6 +55,9 @@ const MyReports = () => {
   const [reports, setReports] = useState<TestResult[]>([]);
   const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set());
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
 
   useEffect(() => { loadReports(); }, []);
@@ -69,8 +76,29 @@ const MyReports = () => {
   };
 
   const toggleExpanded = (id: string) => setExpandedReports(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const getPreviousReport = (index: number) => index < reports.length - 1 ? reports[index + 1] : null;
   const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  const filteredReports = useMemo(() => {
+    return reports.filter(report => {
+      const reportDate = new Date(report.date);
+      if (dateFrom && reportDate < dateFrom) return false;
+      if (dateTo) {
+        const endOfDay = new Date(dateTo);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (reportDate > endOfDay) return false;
+      }
+      return true;
+    });
+  }, [reports, dateFrom, dateTo]);
+
+  const getPreviousReport = (index: number) => index < filteredReports.length - 1 ? filteredReports[index + 1] : null;
+
+  const clearFilters = () => {
+    setDateFrom(undefined);
+    setDateTo(undefined);
+  };
+
+  const hasActiveFilters = dateFrom || dateTo;
 
   const toggleCompareSelection = (id: string) => {
     setSelectedForCompare(prev => {
@@ -114,6 +142,70 @@ const MyReports = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Button variant="ghost" onClick={() => navigate('/')} className="gap-2"><ArrowLeft className="h-4 w-4" />Back</Button>
           <div className="flex items-center gap-2">
+            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button variant={hasActiveFilters ? "secondary" : "outline"} className="gap-2">
+                  <Filter className="h-4 w-4" />
+                  Filter
+                  {hasActiveFilters && <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 justify-center">!</Badge>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-4 z-50 bg-popover" align="end">
+                <div className="space-y-4">
+                  <div className="font-medium text-sm">Filter by Date Range</div>
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm text-muted-foreground">From</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
+                            <Calendar className="mr-2 h-4 w-4" />
+                            {dateFrom ? format(dateFrom, "PPP") : "Select start date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={dateFrom}
+                            onSelect={setDateFrom}
+                            disabled={(date) => date > new Date() || (dateTo ? date > dateTo : false)}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm text-muted-foreground">To</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
+                            <Calendar className="mr-2 h-4 w-4" />
+                            {dateTo ? format(dateTo, "PPP") : "Select end date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={dateTo}
+                            onSelect={setDateTo}
+                            disabled={(date) => date > new Date() || (dateFrom ? date < dateFrom : false)}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                  {hasActiveFilters && (
+                    <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full gap-2">
+                      <X className="h-4 w-4" />
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
             {selectedForCompare.length === 2 && (
               <Button variant="outline" onClick={handleCompare} className="gap-2">
                 <GitCompare className="h-4 w-4" />
@@ -132,19 +224,43 @@ const MyReports = () => {
               <h1 className="text-3xl font-bold text-foreground">My Reports</h1>
             </div>
             <p className="text-muted-foreground">
-              {reports.length} {reports.length === 1 ? 'report' : 'reports'} stored • Track your risk trends over time
-              {reports.length >= 2 && (
+              {filteredReports.length === reports.length 
+                ? `${reports.length} ${reports.length === 1 ? 'report' : 'reports'} stored`
+                : `Showing ${filteredReports.length} of ${reports.length} reports`
+              } • Track your risk trends over time
+              {filteredReports.length >= 2 && (
                 <span className="ml-2 text-primary">• Select 2 reports to compare</span>
               )}
             </p>
+            {hasActiveFilters && (
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="secondary" className="gap-1">
+                  {dateFrom && `From: ${format(dateFrom, "MMM d, yyyy")}`}
+                  {dateFrom && dateTo && " - "}
+                  {dateTo && `To: ${format(dateTo, "MMM d, yyyy")}`}
+                  <button onClick={clearFilters} className="ml-1 hover:text-destructive"><X className="h-3 w-3" /></button>
+                </Badge>
+              </div>
+            )}
           </div>
-          {reports.length === 0 ? (
-            <Card className="text-center py-12"><CardContent><FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><h3 className="text-lg font-semibold mb-2">No Reports Yet</h3><p className="text-muted-foreground mb-6">Complete your first screening.</p><Button onClick={() => navigate('/start-test')}>Start Test</Button></CardContent></Card>
+          {filteredReports.length === 0 ? (
+            <Card className="text-center py-12">
+              <CardContent>
+                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">{reports.length === 0 ? "No Reports Yet" : "No Reports Match Filter"}</h3>
+                <p className="text-muted-foreground mb-6">{reports.length === 0 ? "Complete your first screening." : "Try adjusting the date range."}</p>
+                {reports.length === 0 ? (
+                  <Button onClick={() => navigate('/start-test')}>Start Test</Button>
+                ) : (
+                  <Button variant="outline" onClick={clearFilters}>Clear Filters</Button>
+                )}
+              </CardContent>
+            </Card>
           ) : (
             <>
-              <RiskTrendChart reports={reports} />
+              <RiskTrendChart reports={filteredReports} />
               <div className="space-y-4">
-                {reports.map((report, index) => {
+                {filteredReports.map((report, index) => {
                   const trends = calculateTrends(report, getPreviousReport(index));
                   const riskSummary = getRiskSummary(report.predictions);
                   const isExpanded = expandedReports.has(report.id);
@@ -155,7 +271,7 @@ const MyReports = () => {
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex items-center gap-3">
-                              {reports.length >= 2 && (
+                              {filteredReports.length >= 2 && (
                                 <Checkbox 
                                   checked={isSelectedForCompare}
                                   onCheckedChange={() => toggleCompareSelection(report.id)}
@@ -208,7 +324,7 @@ const MyReports = () => {
                                 <div className="flex flex-col items-center p-4 bg-card border border-border rounded-lg"><p className="text-xs text-muted-foreground mb-2">Scan to share</p><QRCodeSVG value={`${window.location.origin}/results?id=${report.id}`} size={80} level="M" /></div>
                               </div>
                             </div>
-                            {index === 0 && reports.length > 1 && <div className="mt-6 p-4 bg-muted/50 rounded-lg"><p className="text-sm text-muted-foreground"><strong>Trend Analysis:</strong> Comparing to previous test from {formatDate(reports[1].date)}. ↑ = increased risk, ↓ = improvement.</p></div>}
+                            {index === 0 && filteredReports.length > 1 && <div className="mt-6 p-4 bg-muted/50 rounded-lg"><p className="text-sm text-muted-foreground"><strong>Trend Analysis:</strong> Comparing to previous test from {formatDate(filteredReports[1].date)}. ↑ = increased risk, ↓ = improvement.</p></div>}
                           </CardContent>
                         </CollapsibleContent>
                       </Collapsible>
