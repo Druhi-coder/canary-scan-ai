@@ -62,6 +62,7 @@ const MyReports = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isEmailOpen, setIsEmailOpen] = useState(false);
+  const [emailSingleReport, setEmailSingleReport] = useState<TestResult | null>(null);
 
   useEffect(() => { loadReports(); }, []);
 
@@ -353,6 +354,15 @@ const MyReports = () => {
                                   <div><h4 className="font-semibold text-sm text-muted-foreground uppercase mb-3">Key Factors</h4><div className="space-y-2">{report.rankedFactors.slice(0, 5).map((f, i) => <div key={i} className={`text-sm p-2 rounded ${f.impact === 'increases' ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-600'}`}>{f.impact === 'increases' ? '↑' : '↓'} {f.name}</div>)}</div></div>
                                 )}
                                 <div className="flex flex-col items-center p-4 bg-card border border-border rounded-lg"><p className="text-xs text-muted-foreground mb-2">Scan to share</p><QRCodeSVG value={`${window.location.origin}/results?id=${report.id}`} size={80} level="M" /></div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => setEmailSingleReport(report)} 
+                                  className="w-full gap-2"
+                                >
+                                  <Mail className="h-4 w-4" />
+                                  Email This Report
+                                </Button>
                               </div>
                             </div>
                             {index === 0 && filteredReports.length > 1 && <div className="mt-6 p-4 bg-muted/50 rounded-lg"><p className="text-sm text-muted-foreground"><strong>Trend Analysis:</strong> Comparing to previous test from {formatDate(filteredReports[1].date)}. ↑ = increased risk, ↓ = improvement.</p></div>}
@@ -382,6 +392,13 @@ const MyReports = () => {
         reportType="trend"
         filteredReports={filteredReports}
         dateRange={{ from: dateFrom, to: dateTo }}
+      />
+
+      <EmailReportDialog
+        isOpen={!!emailSingleReport}
+        onClose={() => setEmailSingleReport(null)}
+        reportType="single"
+        report={emailSingleReport || undefined}
       />
     </div>
   );
