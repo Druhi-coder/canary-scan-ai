@@ -173,50 +173,115 @@ const MyReports = () => {
               <PopoverContent className="w-auto p-4 z-50 bg-popover" align="end">
                 <div className="space-y-4">
                   <div className="font-medium text-sm">Filter by Date Range</div>
-                  <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm text-muted-foreground">From</label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
-                            <Calendar className="mr-2 h-4 w-4" />
-                            {dateFrom ? format(dateFrom, "PPP") : "Select start date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={dateFrom}
-                            onSelect={setDateFrom}
-                            disabled={(date) => date > new Date() || (dateTo ? date > dateTo : false)}
-                            initialFocus
-                            className={cn("p-3 pointer-events-auto")}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm text-muted-foreground">To</label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
-                            <Calendar className="mr-2 h-4 w-4" />
-                            {dateTo ? format(dateTo, "PPP") : "Select end date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={dateTo}
-                            onSelect={setDateTo}
-                            disabled={(date) => date > new Date() || (dateFrom ? date < dateFrom : false)}
-                            initialFocus
-                            className={cn("p-3 pointer-events-auto")}
-                          />
-                        </PopoverContent>
-                      </Popover>
+                  
+                  {/* Quick Presets */}
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const now = new Date();
+                        const from = new Date(now);
+                        from.setDate(now.getDate() - 7);
+                        setDateFrom(from);
+                        setDateTo(now);
+                      }}
+                      className="text-xs"
+                    >
+                      Last 7 days
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const now = new Date();
+                        const from = new Date(now);
+                        from.setDate(now.getDate() - 30);
+                        setDateFrom(from);
+                        setDateTo(now);
+                      }}
+                      className="text-xs"
+                    >
+                      Last 30 days
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const now = new Date();
+                        const from = new Date(now);
+                        from.setMonth(now.getMonth() - 3);
+                        setDateFrom(from);
+                        setDateTo(now);
+                      }}
+                      className="text-xs"
+                    >
+                      Last 3 months
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const now = new Date();
+                        const from = new Date(now);
+                        from.setFullYear(now.getFullYear() - 1);
+                        setDateFrom(from);
+                        setDateTo(now);
+                      }}
+                      className="text-xs"
+                    >
+                      Last year
+                    </Button>
+                  </div>
+
+                  <div className="border-t border-border pt-4">
+                    <div className="text-xs text-muted-foreground mb-3">Or select custom range</div>
+                    <div className="grid gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm text-muted-foreground">From</label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
+                              <Calendar className="mr-2 h-4 w-4" />
+                              {dateFrom ? format(dateFrom, "PPP") : "Select start date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={dateFrom}
+                              onSelect={setDateFrom}
+                              disabled={(date) => date > new Date() || (dateTo ? date > dateTo : false)}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm text-muted-foreground">To</label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
+                              <Calendar className="mr-2 h-4 w-4" />
+                              {dateTo ? format(dateTo, "PPP") : "Select end date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={dateTo}
+                              onSelect={setDateTo}
+                              disabled={(date) => date > new Date() || (dateFrom ? date < dateFrom : false)}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                     </div>
                   </div>
+                  
                   {hasActiveFilters && (
                     <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full gap-2">
                       <X className="h-4 w-4" />
