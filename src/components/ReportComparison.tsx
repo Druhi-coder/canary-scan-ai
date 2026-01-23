@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, ArrowRight, Download } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, ArrowRight, Download, Mail } from "lucide-react";
 import { TestResult } from "@/lib/storage";
 import { generateComparisonPDF } from "@/lib/pdfExport";
 import { useToast } from "@/hooks/use-toast";
+import { EmailReportDialog } from "@/components/EmailReportDialog";
 
 interface ReportComparisonProps {
   isOpen: boolean;
@@ -37,6 +39,7 @@ const getDiffBadge = (diff: number) => {
 
 export const ReportComparison = ({ isOpen, onClose, reportA, reportB }: ReportComparisonProps) => {
   const { toast } = useToast();
+  const [isEmailOpen, setIsEmailOpen] = useState(false);
   
   if (!reportA || !reportB) return null;
 
@@ -70,6 +73,10 @@ export const ReportComparison = ({ isOpen, onClose, reportA, reportB }: ReportCo
               <ArrowRight className="h-4 w-4" />
               <Badge variant="secondary">{formatDate(reportB.date)}</Badge>
             </DialogTitle>
+            <Button variant="outline" size="sm" onClick={() => setIsEmailOpen(true)} className="gap-2">
+              <Mail className="h-4 w-4" />
+              Email
+            </Button>
             <Button variant="outline" size="sm" onClick={handleExportPDF} className="gap-2">
               <Download className="h-4 w-4" />
               Export PDF
@@ -218,6 +225,14 @@ export const ReportComparison = ({ isOpen, onClose, reportA, reportB }: ReportCo
             </p>
           </div>
         </div>
+
+        <EmailReportDialog
+          isOpen={isEmailOpen}
+          onClose={() => setIsEmailOpen(false)}
+          reportType="comparison"
+          reportA={reportA}
+          reportB={reportB}
+        />
       </DialogContent>
     </Dialog>
   );
