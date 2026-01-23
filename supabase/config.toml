@@ -1,1 +1,7 @@
 project_id = "aomvslkumbzlybdokwib"
+
+[functions.analyze-medical-report]
+verify_jwt = false
+
+[functions.send-report-email]
+verify_jwt = false

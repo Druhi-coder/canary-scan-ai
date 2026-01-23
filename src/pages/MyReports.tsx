@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowLeft, Plus, Trash2, Calendar, TrendingUp, TrendingDown, Minus, FileText, ChevronDown, ChevronUp, BarChart3, GitCompare, Filter, X, Download } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Calendar, TrendingUp, TrendingDown, Minus, FileText, ChevronDown, ChevronUp, BarChart3, GitCompare, Filter, X, Download, Mail } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { getReports, deleteReport, TestResult } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import { CancerRiskResult } from "@/lib/predictionEngine";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import RiskTrendChart from "@/components/RiskTrendChart";
 import { ReportComparison } from "@/components/ReportComparison";
+import { EmailReportDialog } from "@/components/EmailReportDialog";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { generateFilteredReportsPDF, generateComparisonPDF } from "@/lib/pdfExport";
@@ -60,6 +61,7 @@ const MyReports = () => {
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [isEmailOpen, setIsEmailOpen] = useState(false);
 
   useEffect(() => { loadReports(); }, []);
 
@@ -230,10 +232,16 @@ const MyReports = () => {
               </Button>
             )}
             {filteredReports.length > 0 && (
-              <Button variant="outline" onClick={handleExportPDF} className="gap-2">
-                <Download className="h-4 w-4" />
-                Export PDF
-              </Button>
+              <>
+                <Button variant="outline" onClick={() => setIsEmailOpen(true)} className="gap-2">
+                  <Mail className="h-4 w-4" />
+                  Email Report
+                </Button>
+                <Button variant="outline" onClick={handleExportPDF} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export PDF
+                </Button>
+              </>
             )}
             <Button onClick={() => navigate('/start-test')} className="gap-2"><Plus className="h-4 w-4" />New Test</Button>
           </div>
@@ -366,6 +374,14 @@ const MyReports = () => {
         onClose={() => setIsCompareOpen(false)}
         reportA={reportA}
         reportB={reportB}
+      />
+
+      <EmailReportDialog
+        isOpen={isEmailOpen}
+        onClose={() => setIsEmailOpen(false)}
+        reportType="trend"
+        filteredReports={filteredReports}
+        dateRange={{ from: dateFrom, to: dateTo }}
       />
     </div>
   );
