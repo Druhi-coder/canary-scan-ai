@@ -14,7 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assessments: {
+        Row: {
+          ai_analysis: string | null
+          created_at: string
+          debug_data: Json | null
+          form_data: Json | null
+          id: string
+          input_summary: Json | null
+          medical_report: Json | null
+          predictions: Json
+          ranked_factors: Json | null
+          top_features: Json | null
+          user_id: string
+        }
+        Insert: {
+          ai_analysis?: string | null
+          created_at?: string
+          debug_data?: Json | null
+          form_data?: Json | null
+          id?: string
+          input_summary?: Json | null
+          medical_report?: Json | null
+          predictions: Json
+          ranked_factors?: Json | null
+          top_features?: Json | null
+          user_id: string
+        }
+        Update: {
+          ai_analysis?: string | null
+          created_at?: string
+          debug_data?: Json | null
+          form_data?: Json | null
+          id?: string
+          input_summary?: Json | null
+          medical_report?: Json | null
+          predictions?: Json
+          ranked_factors?: Json | null
+          top_features?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ArrowLeft, Plus, Trash2, Calendar, TrendingUp, TrendingDown, Minus, FileText, ChevronDown, ChevronUp, BarChart3, GitCompare, Filter, X, Download, Mail } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { getReports, deleteReport, TestResult } from "@/lib/storage";
+import { getAssessmentsFromDb, deleteAssessmentFromDb } from "@/lib/assessmentStorage";
 import { useToast } from "@/hooks/use-toast";
 import { CancerRiskResult } from "@/lib/predictionEngine";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -66,14 +67,29 @@ const MyReports = () => {
 
   useEffect(() => { loadReports(); }, []);
 
-  const loadReports = () => {
+  const loadReports = async () => {
+    try {
+      // Try loading from database first
+      const dbReports = await getAssessmentsFromDb();
+      if (dbReports.length > 0) {
+        dbReports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setReports(dbReports);
+        return;
+      }
+    } catch {
+      // Fall back to local storage
+    }
     const storedReports = getReports();
     storedReports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     setReports(storedReports);
   };
 
-  const handleDelete = (id: string) => {
-    deleteReport(id);
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteAssessmentFromDb(id);
+    } catch {
+      deleteReport(id);
+    }
     setSelectedForCompare(prev => prev.filter(i => i !== id));
     loadReports();
     toast({ title: "Report Deleted", description: "The report has been removed." });

@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Target, Shield, Brain, Heart, Zap, Database } from "lucide-react";
-import canaryLogo from "@/assets/canary-logo.png";
+
 
 const About = () => {
   const navigate = useNavigate();
@@ -20,7 +20,9 @@ const About = () => {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <img src={canaryLogo} alt="CANary Logo" className="h-24 w-24 mx-auto mb-4" />
+          <div className="h-24 w-24 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+            <Target className="h-12 w-12 text-primary" />
+          </div>
           <h1 className="text-4xl font-bold mb-4">About CANary</h1>
           <p className="text-xl text-muted-foreground">
             Empowering early cancer detection through accessible AI technology

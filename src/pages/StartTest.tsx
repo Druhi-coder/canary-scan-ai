@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { generatePrediction, PredictionInput } from "@/lib/predictionEngine";
 import { saveReport } from "@/lib/storage";
+import { saveAssessmentToDb } from "@/lib/assessmentStorage";
 import { useToast } from "@/hooks/use-toast";
 import { MedicalReportUpload } from "@/components/MedicalReportUpload";
 import { BMIDisplay } from "@/components/BMIDisplay";
@@ -379,7 +380,16 @@ const StartTest = () => {
       aiAnalysis: aiAnalysis,
     };
     
+    // Save locally for offline access
     saveReport(report);
+    
+    // Save to database for persistence
+    try {
+      await saveAssessmentToDb(report);
+    } catch (dbError) {
+      console.error("Failed to save to database:", dbError);
+      // Local save succeeded, so we continue
+    }
     
     setLoading(false);
     navigate("/results", { state: { report } });
