@@ -1,21 +1,45 @@
 /**
- * CANary Risk Prediction Engine
- * =============================
+ * CANary Risk Prediction Engine v2.0
+ * ====================================
  * 
- * This module implements a rule-based risk scoring system for multi-cancer screening.
+ * This module implements an evidence-based risk scoring system for multi-cancer screening.
  * Designed for IEEE paper documentation with transparent, reproducible logic.
  * 
  * METHODOLOGY:
  * 1. Input data is normalized into a standardized feature vector
- * 2. Each cancer type has weighted risk factors based on medical literature
+ * 2. Each cancer type has weighted risk factors calibrated from published meta-analyses
  * 3. Final scores combine base risk, symptoms, lifestyle, and lab values
  * 4. Confidence is determined by data completeness and consistency
+ * 5. Optional: Scores can be refined via external ML model or AI-enhanced analysis
+ * 
+ * EVIDENCE BASE:
+ * - Pancreatic: Iodice et al. 2008 (smoking OR 1.74), Huxley et al. 2005 (diabetes RR 1.82),
+ *   Sharma et al. 2018 (new-onset diabetes OR 5.38), Permuth-Wey & Egan 2009 (family RR 1.80)
+ * - Colon: Johns & Houlston 2001 (family RR 2.24), Jess et al. 2012 (IBD SIR 2.4),
+ *   Wolin et al. 2009 (activity RR 0.76), Chan et al. 2011 (processed meat RR 1.17)
+ * - Blood: CLIC 2013 (age distribution), Linet et al. 2007 (family OR 1.7-2.0),
+ *   WHO 5th Ed. 2022 (classification criteria)
+ * 
+ * WEIGHT DERIVATION:
+ * - Odds Ratios normalized to 0-1: weight = 1 - (1/OR)
+ * - Protective factors use inverse
+ * - Capped at 0.95 to prevent deterministic outcomes
+ * - See src/lib/riskWeights.ts for detailed weight documentation
+ * - See src/lib/citations.ts for full reference list
  * 
  * LIMITATIONS:
- * - Uses synthetic weights, not trained on clinical data
+ * - Weights are derived from population-level statistics, not individual-level trained models
  * - For research/educational purposes only
- * - Not validated for clinical diagnosis
+ * - Not validated for clinical diagnosis in any regulatory framework
+ * - Performance characteristics (sensitivity/specificity) have not been clinically validated
  */
+
+import { 
+  PANCREATIC_WEIGHTS, 
+  COLON_WEIGHTS, 
+  BLOOD_WEIGHTS,
+  SECTION_WEIGHTS,
+} from './riskWeights';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -389,42 +413,64 @@ export const extractFeatureVector = (input: PredictionInput): FeatureVector => {
 const calculatePancreaticRisk = (fv: FeatureVector, input: PredictionInput): number => {
   let score = 0;
   let weightSum = 0;
+  const W = PANCREATIC_WEIGHTS;
+  const S = SECTION_WEIGHTS;
 
-  // Demographics (weight: 0.2)
-  const ageRisk = input.age > 60 ? 0.8 : input.age > 45 ? 0.5 : 0.2;
-  score += ageRisk * 0.15;
-  weightSum += 0.15;
+  // Demographics — SEER age-incidence data [PC3, M1]
+  const ageWeight = input.age > 60 ? W.age_over_60.value : input.age > 45 ? W.age_45_60.value : W.age_under_45.value;
+  score += ageWeight * S.demographics;
+  weightSum += S.demographics;
 
-  // BMI (weight: 0.1)
-  const bmiRisk = input.bmi > 30 ? 0.6 : input.bmi > 25 ? 0.3 : 0.1;
-  score += bmiRisk * 0.1;
-  weightSum += 0.1;
+  // BMI — Meta-analysis: BMI >30 RR ~1.3-1.5 [PC3]
+  const bmiWeight = input.bmi > 30 ? W.obesity_bmi30.value : input.bmi > 25 ? 0.20 : 0.05;
+  score += bmiWeight * S.demographics;
+  weightSum += S.demographics;
 
-  // Medical history (weight: 0.25)
-  if (fv.has_family_cancer) { score += 0.2; weightSum += 0.2; }
-  if (fv.has_diabetes_history) { score += 0.15; weightSum += 0.15; }
-  if (fv.has_hepatitis) { score += 0.1; weightSum += 0.1; }
+  // Medical history — Multiple meta-analyses [PC3, PC4, PC5]
+  const historyScore = (
+    (fv.has_family_cancer ? W.family_history.value : 0) +
+    (fv.has_diabetes_history ? W.diabetes_history.value : 0) +
+    (fv.has_hepatitis ? W.hepatitis.value : 0)
+  );
+  const historyMax = W.family_history.value + W.diabetes_history.value + W.hepatitis.value;
+  score += (historyScore / historyMax) * S.medicalHistory;
+  weightSum += S.medicalHistory;
 
-  // Lifestyle (weight: 0.2)
-  score += fv.smoking_score * 0.15;
-  weightSum += 0.15;
-  score += fv.alcohol_score * 0.05;
-  weightSum += 0.05;
+  // Lifestyle — Iodice et al. 2008 [PC1], Bosetti et al. 2012 [PC2]
+  const smokingWeight = fv.smoking_score > 0.7 ? W.smoking_current.value : 
+                         fv.smoking_score > 0.2 ? W.smoking_occasional.value : 0;
+  const lifestyleScore = (smokingWeight + fv.alcohol_score * W.alcohol_heavy.value) / 2;
+  score += lifestyleScore * S.lifestyle;
+  weightSum += S.lifestyle;
 
-  // Symptoms (weight: 0.4)
-  if (fv.has_jaundice) { score += 0.25; weightSum += 0.25; }
-  if (fv.has_abdominal_pain) { score += 0.15; weightSum += 0.15; }
-  if (fv.has_back_pain) { score += 0.2; weightSum += 0.2; }
-  if (fv.has_weight_loss) { score += 0.15; weightSum += 0.15; }
-  if (fv.has_new_diabetes) { score += 0.2; weightSum += 0.2; }
-  if (fv.has_floating_stool) { score += 0.1; weightSum += 0.1; }
-  if (fv.has_nausea) { score += 0.05; weightSum += 0.05; }
+  // Symptoms — Sharma et al. 2018 [PC4]
+  const symptomFactors = [
+    fv.has_jaundice ? W.jaundice.value : 0,
+    fv.has_abdominal_pain ? W.abdominal_pain.value : 0,
+    fv.has_back_pain ? W.back_pain.value : 0,
+    fv.has_weight_loss ? W.weight_loss.value : 0,
+    fv.has_new_diabetes ? W.new_onset_diabetes.value : 0,
+    fv.has_floating_stool ? W.floating_stool.value : 0,
+    fv.has_nausea ? W.nausea.value : 0,
+  ];
+  const symptomMax = Object.values(W).reduce((s, w) => {
+    if (['jaundice','abdominal_pain','back_pain','weight_loss','new_onset_diabetes','floating_stool','nausea'].some(
+      k => (W as any)[k] === w)) return s + w.value;
+    return s;
+  }, 0);
+  const symptomScore = symptomFactors.reduce((a, b) => a + b, 0) / Math.max(symptomMax, 1);
+  score += symptomScore * S.symptoms;
+  weightSum += S.symptoms;
 
-  // Lab values (weight: 0.15)
-  if (fv.bilirubin_normalized > 0.3) { score += 0.15; weightSum += 0.15; }
-  if (fv.blood_sugar_normalized > 0.3) { score += 0.1; weightSum += 0.1; }
+  // Lab values [PC4]
+  const labScore = (
+    (fv.bilirubin_normalized > 0.3 ? W.elevated_bilirubin.value : 0) +
+    (fv.blood_sugar_normalized > 0.3 ? W.elevated_blood_sugar.value : 0)
+  ) / (W.elevated_bilirubin.value + W.elevated_blood_sugar.value);
+  score += labScore * S.labValues * fv.lab_data_available;
+  weightSum += S.labValues * fv.lab_data_available;
 
-  return Math.min(score / Math.max(weightSum, 1), 1);
+  return Math.min(score / Math.max(weightSum, 0.01), 1);
 };
 
 /**
@@ -441,39 +487,58 @@ const calculatePancreaticRisk = (fv: FeatureVector, input: PredictionInput): num
 const calculateColonRisk = (fv: FeatureVector, input: PredictionInput): number => {
   let score = 0;
   let weightSum = 0;
+  const W = COLON_WEIGHTS;
+  const S = SECTION_WEIGHTS;
 
-  // Demographics
-  const ageRisk = input.age > 50 ? 0.7 : input.age > 40 ? 0.4 : 0.2;
-  score += ageRisk * 0.15;
-  weightSum += 0.15;
+  // Demographics — USPSTF 2021 [M1]
+  const ageWeight = input.age > 50 ? W.age_over_50.value : input.age > 40 ? W.age_40_50.value : W.age_under_40.value;
+  score += ageWeight * S.demographics;
+  weightSum += S.demographics;
 
-  // BMI
-  const bmiRisk = input.bmi > 30 ? 0.5 : input.bmi > 25 ? 0.25 : 0.1;
-  score += bmiRisk * 0.1;
-  weightSum += 0.1;
+  // BMI [CC5]
+  const bmiWeight = input.bmi > 30 ? W.obesity_bmi30.value : input.bmi > 25 ? 0.20 : 0.05;
+  score += bmiWeight * S.demographics;
+  weightSum += S.demographics;
 
-  // Medical history
-  if (fv.has_family_cancer) { score += 0.18; weightSum += 0.18; }
-  if (fv.has_ibd) { score += 0.25; weightSum += 0.25; }
+  // Medical history — Johns & Houlston 2001 [CC2], Jess et al. 2012 [CC3]
+  const historyScore = (
+    (fv.has_family_cancer ? W.family_history.value : 0) +
+    (fv.has_ibd ? W.ibd_history.value : 0)
+  );
+  const historyMax = W.family_history.value + W.ibd_history.value;
+  score += (historyScore / historyMax) * S.medicalHistory;
+  weightSum += S.medicalHistory;
 
-  // Lifestyle
-  score += fv.diet_score * 0.1;
-  weightSum += 0.1;
-  score += fv.activity_score * 0.1;
-  weightSum += 0.1;
+  // Lifestyle — Wolin et al. 2009 [CC4], Chan et al. 2011 [CC5]
+  const lifestyleScore = (
+    fv.diet_score * W.diet_processed_meat.value +
+    fv.activity_score * W.sedentary.value +
+    fv.smoking_score * W.smoking.value
+  ) / (W.diet_processed_meat.value + W.sedentary.value + W.smoking.value);
+  score += lifestyleScore * S.lifestyle;
+  weightSum += S.lifestyle;
 
-  // Symptoms
-  if (fv.has_blood_in_stool) { score += 0.3; weightSum += 0.3; }
-  if (fv.has_constipation) { score += 0.12; weightSum += 0.12; }
-  if (fv.has_narrow_stool) { score += 0.18; weightSum += 0.18; }
-  if (fv.has_bloating) { score += 0.08; weightSum += 0.08; }
-  if (fv.has_weight_loss) { score += 0.12; weightSum += 0.12; }
-  if (fv.has_abdominal_pain) { score += 0.08; weightSum += 0.08; }
+  // Symptoms [CC2]
+  const symptomFactors = [
+    fv.has_blood_in_stool ? W.blood_in_stool.value : 0,
+    fv.has_constipation ? W.constipation_change.value : 0,
+    fv.has_narrow_stool ? W.narrow_stool.value : 0,
+    fv.has_bloating ? W.bloating.value : 0,
+    fv.has_weight_loss ? W.weight_loss.value : 0,
+    fv.has_abdominal_pain ? W.abdominal_pain.value : 0,
+  ];
+  const symptomMax = W.blood_in_stool.value + W.constipation_change.value + W.narrow_stool.value +
+                     W.bloating.value + W.weight_loss.value + W.abdominal_pain.value;
+  const symptomScore = symptomFactors.reduce((a, b) => a + b, 0) / Math.max(symptomMax, 1);
+  score += symptomScore * S.symptoms;
+  weightSum += S.symptoms;
 
-  // Lab values
-  if (fv.hemoglobin_normalized > 0.2) { score += 0.12; weightSum += 0.12; }
+  // Lab values — iron-deficiency anemia [CC3]
+  const labScore = fv.hemoglobin_normalized > 0.2 ? W.low_hemoglobin.value : 0;
+  score += (labScore / W.low_hemoglobin.value) * S.labValues * fv.lab_data_available;
+  weightSum += S.labValues * fv.lab_data_available;
 
-  return Math.min(score / Math.max(weightSum, 1), 1);
+  return Math.min(score / Math.max(weightSum, 0.01), 1);
 };
 
 /**
@@ -489,33 +554,55 @@ const calculateColonRisk = (fv: FeatureVector, input: PredictionInput): number =
 const calculateBloodRisk = (fv: FeatureVector, input: PredictionInput): number => {
   let score = 0;
   let weightSum = 0;
+  const W = BLOOD_WEIGHTS;
+  const S = SECTION_WEIGHTS;
 
-  // Demographics (bimodal age risk)
-  const ageRisk = input.age < 20 || input.age > 60 ? 0.6 : 0.2;
-  score += ageRisk * 0.12;
-  weightSum += 0.12;
+  // Demographics — Bimodal distribution [BC1]
+  const ageWeight = input.age < 20 ? W.age_under_20.value : 
+                    input.age > 60 ? W.age_over_60.value : W.age_20_60.value;
+  score += ageWeight * S.demographics;
+  weightSum += S.demographics;
 
-  // Medical history
-  if (fv.has_family_cancer) { score += 0.15; weightSum += 0.15; }
-  if (fv.has_anemia) { score += 0.15; weightSum += 0.15; }
-  if (fv.has_hepatitis) { score += 0.1; weightSum += 0.1; }
+  // Medical history — Linet et al. 2007 [BC2]
+  const historyScore = (
+    (fv.has_family_cancer ? W.family_history.value : 0) +
+    (fv.has_anemia ? W.anemia_history.value : 0) +
+    (fv.has_hepatitis ? W.hepatitis_history.value : 0)
+  );
+  const historyMax = W.family_history.value + W.anemia_history.value + W.hepatitis_history.value;
+  score += (historyScore / historyMax) * S.medicalHistory;
+  weightSum += S.medicalHistory;
 
-  // Symptoms
-  if (fv.has_fatigue) { score += 0.15; weightSum += 0.15; }
-  if (fv.has_bruising) { score += 0.2; weightSum += 0.2; }
-  if (fv.has_nosebleeds) { score += 0.15; weightSum += 0.15; }
-  if (fv.has_infections) { score += 0.2; weightSum += 0.2; }
-  if (fv.has_bone_pain) { score += 0.2; weightSum += 0.2; }
-  if (fv.has_swollen_lymph) { score += 0.25; weightSum += 0.25; }
-  if (fv.has_pale_skin) { score += 0.12; weightSum += 0.12; }
-  if (fv.has_weight_loss) { score += 0.1; weightSum += 0.1; }
+  // Symptoms — WHO 5th Ed. Classification [BC3]
+  const symptomFactors = [
+    fv.has_fatigue ? W.fatigue.value : 0,
+    fv.has_bruising ? W.easy_bruising.value : 0,
+    fv.has_nosebleeds ? W.nosebleeds.value : 0,
+    fv.has_infections ? W.recurrent_infections.value : 0,
+    fv.has_bone_pain ? W.bone_pain.value : 0,
+    fv.has_swollen_lymph ? W.swollen_lymph_nodes.value : 0,
+    fv.has_pale_skin ? W.pale_skin.value : 0,
+    fv.has_weight_loss ? W.weight_loss.value : 0,
+  ];
+  const symptomMax = W.fatigue.value + W.easy_bruising.value + W.nosebleeds.value +
+                     W.recurrent_infections.value + W.bone_pain.value + W.swollen_lymph_nodes.value +
+                     W.pale_skin.value + W.weight_loss.value;
+  const symptomScore = symptomFactors.reduce((a, b) => a + b, 0) / Math.max(symptomMax, 1);
+  score += symptomScore * S.symptoms;
+  weightSum += S.symptoms;
 
-  // Lab values (most important for blood cancer)
-  if (fv.hemoglobin_normalized > 0.3) { score += 0.2; weightSum += 0.2; }
-  if (fv.wbc_normalized > 0.3) { score += 0.2; weightSum += 0.2; }
-  if (fv.platelet_normalized > 0.3) { score += 0.2; weightSum += 0.2; }
+  // Lab values — Most critical for hematologic malignancies [BC3]
+  const labFactors = [
+    fv.hemoglobin_normalized > 0.3 ? W.abnormal_hemoglobin.value : 0,
+    fv.wbc_normalized > 0.3 ? W.abnormal_wbc.value : 0,
+    fv.platelet_normalized > 0.3 ? W.abnormal_platelets.value : 0,
+  ];
+  const labMax = W.abnormal_hemoglobin.value + W.abnormal_wbc.value + W.abnormal_platelets.value;
+  const labScore = labFactors.reduce((a, b) => a + b, 0) / Math.max(labMax, 1);
+  score += labScore * S.labValues * fv.lab_data_available;
+  weightSum += S.labValues * fv.lab_data_available;
 
-  return Math.min(score / Math.max(weightSum, 1), 1);
+  return Math.min(score / Math.max(weightSum, 0.01), 1);
 };
 
 /**
@@ -741,7 +828,7 @@ export const generatePrediction = (input: PredictionInput): PredictionResult => 
       },
       dataCompleteness: featureVector.lab_data_available,
       timestamp: new Date().toISOString(),
-      version: '1.0.0',
+      version: '2.0.0-literature-calibrated',
     },
   };
 
