@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Activity, Shield, Brain, TrendingUp } from "lucide-react";
+import { Activity, Shield, Brain, TrendingUp, LogOut } from "lucide-react";
 import heroBanner from "@/assets/hero-banner.jpg";
-import canaryLogo from "@/assets/canary-logo.png";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   return (
     <div className="min-h-screen bg-background">
@@ -13,14 +14,19 @@ const Index = () => {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={canaryLogo} alt="CANary Logo" className="h-10 w-10" />
             <h1 className="text-2xl font-bold text-primary">CANary</h1>
           </div>
           <nav className="hidden md:flex gap-6">
             <Button variant="ghost" onClick={() => navigate("/about")}>About</Button>
             <Button variant="ghost" onClick={() => navigate("/research-mode")}>Research</Button>
             <Button variant="ghost" onClick={() => navigate("/my-reports")}>My Reports</Button>
-            <Button variant="default" onClick={() => navigate("/auth")}>Sign In</Button>
+            {user ? (
+              <Button variant="outline" onClick={signOut} className="gap-2">
+                <LogOut className="h-4 w-4" /> Sign Out
+              </Button>
+            ) : (
+              <Button variant="default" onClick={() => navigate("/auth")}>Sign In</Button>
+            )}
           </nav>
         </div>
       </header>
