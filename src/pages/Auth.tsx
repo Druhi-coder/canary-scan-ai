@@ -64,6 +64,8 @@ const Auth = () => {
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
+      } else if (error instanceof Error && (error.message.includes("Load failed") || error.message.includes("fetch"))) {
+        toast.error("Network error. Please check your connection and try again.");
       } else {
         toast.error("An error occurred during sign up");
       }
@@ -96,6 +98,8 @@ const Auth = () => {
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
+      } else if (error instanceof Error && (error.message.includes("Load failed") || error.message.includes("fetch"))) {
+        toast.error("Network error. Please check your connection and try again.");
       } else {
         toast.error("An error occurred during sign in");
       }
