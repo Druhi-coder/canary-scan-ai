@@ -74,6 +74,37 @@ const Auth = () => {
     }
   };
 
+  const handleMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const validated = z.string().trim().email().max(255).parse(email);
+      const { error } = await supabase.auth.signInWithOtp({
+        email: validated,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Magic link sent! Check your email inbox.");
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error("Please enter a valid email address.");
+      } else if (error instanceof Error && (error.message.includes("Load failed") || error.message.includes("fetch"))) {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error("An error occurred sending the magic link.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -117,9 +148,10 @@ const Auth = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="magic">Magic Link</TabsTrigger>
             </TabsList>
 
             <TabsContent value="signin">
@@ -182,6 +214,29 @@ const Auth = () => {
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating account..." : "Sign Up"}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="magic">
+              <form onSubmit={handleMagicLink} className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Enter your email and we'll send you a login link — no password needed.
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="magic-email">Email</Label>
+                  <Input
+                    id="magic-email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Sending link..." : "Send Magic Link"}
                 </Button>
               </form>
             </TabsContent>
