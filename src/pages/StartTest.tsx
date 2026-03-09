@@ -1026,6 +1026,25 @@ const StartTest = () => {
                   onChange={(v) => setFormData({...formData, bloodSugar: v})}
                 />
               </div>
+              
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wide">Tumor Markers (if available)</h4>
+                <p className="text-xs text-muted-foreground mb-4">These specialized markers significantly improve prediction accuracy when available.</p>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <CA199Input
+                    value={formData.ca199}
+                    onChange={(v) => setFormData({...formData, ca199: v})}
+                  />
+                  <CEAInput
+                    value={formData.cea}
+                    onChange={(v) => setFormData({...formData, cea: v})}
+                  />
+                  <LDHInput
+                    value={formData.ldh}
+                    onChange={(v) => setFormData({...formData, ldh: v})}
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
