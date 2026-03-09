@@ -1,6 +1,6 @@
 /**
- * Medical Citations & References
- * ===============================
+ * Medical Citations & References v3.0
+ * =====================================
  * 
  * All risk weights and factors in the CANary prediction engine are derived
  * from peer-reviewed epidemiological studies and clinical guidelines.
@@ -160,6 +160,68 @@ export const CITATIONS: Record<string, Citation[]> = {
       relevance: 'WHO classification criteria — symptom weight calibration for lymph node enlargement, cytopenias',
     },
   ],
+  tumorMarkers: [
+    {
+      id: 'TM1',
+      authors: 'Ballehaninna UK, Chamberlain RS',
+      title: 'The clinical utility of serum CA 19-9 in the diagnosis, prognosis and management of pancreatic adenocarcinoma',
+      journal: 'J Gastrointest Oncol',
+      year: 2012,
+      doi: '10.3978/j.issn.2078-6891.2011.021',
+      pmid: '22811878',
+      relevance: 'CA 19-9 sensitivity 79%, specificity 82% for PDAC — tumor marker weight calibration',
+    },
+    {
+      id: 'TM2',
+      authors: 'Duffy MJ, van Dalen A, Haglund C, et al.',
+      title: 'Tumour markers in colorectal cancer: European Group on Tumour Markers (EGTM) guidelines for clinical use',
+      journal: 'Eur J Cancer',
+      year: 2007,
+      doi: '10.1016/j.ejca.2007.07.039',
+      pmid: '17888627',
+      relevance: 'CEA sensitivity ~46%, specificity ~89% for CRC — tumor marker weight calibration',
+    },
+    {
+      id: 'TM3',
+      authors: 'Ferraris AM, Giuntini P, Gaetani GF',
+      title: 'Serum lactic dehydrogenase as a prognostic tool for non-Hodgkin lymphomas',
+      journal: 'Blood',
+      year: 1979,
+      pmid: '508939',
+      relevance: 'LDH elevated in ~50% of lymphomas at diagnosis — tumor marker weight calibration',
+    },
+  ],
+  clusters: [
+    {
+      id: 'CL1',
+      authors: 'Freelove R, Walling AD',
+      title: 'Pancreatic cancer: diagnosis and management',
+      journal: 'Am Fam Physician',
+      year: 2006,
+      pmid: '16477903',
+      relevance: 'Clinical presentation patterns for PDAC — symptom cluster definitions',
+    },
+    {
+      id: 'CL2',
+      authors: 'Astin M, Griffin T, Neal RD, et al.',
+      title: 'The diagnostic value of symptoms for colorectal cancer in primary care: a systematic review',
+      journal: 'Br J Gen Pract',
+      year: 2011,
+      doi: '10.3399/bjgp11X572427',
+      pmid: '21619747',
+      relevance: 'Symptom cluster predictive values for CRC — cluster boost calibration',
+    },
+    {
+      id: 'CL3',
+      authors: 'Clarke RT, Van den Bruel A,"; et al.',
+      title: 'Diagnostic accuracy of investigations for leukaemia in primary care',
+      journal: 'BMJ Open',
+      year: 2016,
+      doi: '10.1136/bmjopen-2016-012396',
+      pmid: '27531726',
+      relevance: 'Marrow failure symptom clusters for leukemia detection in primary care',
+    },
+  ],
   methodology: [
     {
       id: 'M1',
@@ -181,6 +243,22 @@ export const CITATIONS: Record<string, Citation[]> = {
       pmid: '19273866',
       relevance: 'False-positive rates in screening — informed threshold calibration',
     },
+    {
+      id: 'M3',
+      authors: 'Howlader N, Noone AM, Krapcho M, et al.',
+      title: 'SEER Cancer Statistics Review, 1975-2020',
+      journal: 'National Cancer Institute',
+      year: 2023,
+      relevance: 'Gender-specific incidence ratios and age-adjusted base rates — Bayesian prior calibration',
+    },
+    {
+      id: 'M4',
+      authors: 'National Cancer Institute',
+      title: 'SEER*Explorer: Age-Specific Incidence Rates',
+      journal: 'SEER Program',
+      year: 2023,
+      relevance: 'Age-specific incidence rates per 100,000 — Bayesian prior base rates for each cancer type',
+    },
   ],
 };
 
@@ -197,7 +275,12 @@ export const getAllCitations = (): Citation[] => {
  * Get citations relevant to a specific cancer type
  */
 export const getCitationsForCancer = (type: 'pancreatic' | 'colon' | 'blood'): Citation[] => {
-  return [...(CITATIONS[type] || []), ...(CITATIONS.methodology || [])];
+  return [
+    ...(CITATIONS[type] || []),
+    ...(CITATIONS.tumorMarkers || []),
+    ...(CITATIONS.clusters || []),
+    ...(CITATIONS.methodology || []),
+  ];
 };
 
 /**
