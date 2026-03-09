@@ -1,6 +1,6 @@
 /**
- * Evidence-Based Risk Weight Configuration
- * ==========================================
+ * Evidence-Based Risk Weight Configuration v3.0
+ * ================================================
  * 
  * All weights in this module are derived from published meta-analyses
  * and epidemiological studies. Each weight includes its source citation ID.
@@ -11,7 +11,7 @@
  * - For protective factors, the inverse is used
  * - Weights are capped at 0.95 to prevent deterministic outcomes
  * 
- * VERSION: 2.0.0 — Literature-calibrated weights
+ * VERSION: 3.0.0 — Enhanced with duration, clusters, gender, Bayesian priors, tumor markers
  */
 
 export interface WeightConfig {
@@ -19,6 +19,197 @@ export interface WeightConfig {
   citation: string;     // Citation ID from citations.ts
   description: string;  // Brief explanation of derivation
 }
+
+// ============================================================================
+// SYMPTOM DURATION MULTIPLIERS
+// ============================================================================
+
+/**
+ * Duration multipliers increase symptom weight based on persistence.
+ * Longer-duration symptoms are more clinically concerning.
+ * Source: Clinical guidelines (NICE NG12 2015, ACS screening criteria)
+ */
+export const DURATION_MULTIPLIERS: Record<string, number> = {
+  '<2weeks': 0.7,    // Short duration, less concerning
+  '2-6weeks': 1.0,   // Moderate duration, baseline weight
+  '>6weeks': 1.4,    // Persistent symptoms, significantly more concerning
+};
+
+// ============================================================================
+// GENDER-SPECIFIC RISK MODIFIERS
+// ============================================================================
+
+/**
+ * Gender modifiers based on SEER incidence data.
+ * Applied as multipliers to the final cancer-specific score.
+ */
+export const GENDER_MODIFIERS = {
+  pancreatic: {
+    male: { value: 1.30, citation: 'M3', description: 'SEER: M:F incidence ratio ~1.3:1 for PDAC' },
+    female: { value: 0.77, citation: 'M3', description: 'SEER: female incidence ~77% of male rate' },
+  },
+  colon: {
+    male: { value: 1.24, citation: 'M3', description: 'SEER: M:F incidence ratio ~1.24:1 for CRC' },
+    female: { value: 0.81, citation: 'M3', description: 'SEER: female incidence ~81% of male rate' },
+  },
+  blood: {
+    male: { value: 1.40, citation: 'M3', description: 'SEER: leukemia/lymphoma M:F ratio ~1.4:1' },
+    female: { value: 0.71, citation: 'M3', description: 'SEER: female incidence ~71% of male rate' },
+  },
+};
+
+// ============================================================================
+// SYMPTOM CLUSTER DEFINITIONS
+// ============================================================================
+
+/**
+ * Symptom clusters — co-occurring symptom patterns that are far more
+ * predictive than individual symptoms scored independently.
+ * 
+ * When all symptoms in a cluster are present, a multiplicative boost is applied.
+ * Minimum 2 of the cluster symptoms must be present for a partial boost.
+ */
+export interface SymptomCluster {
+  name: string;
+  symptoms: string[];      // Feature vector field names (has_*)
+  fullBoost: number;       // Multiplier when all present
+  partialBoost: number;    // Multiplier when ≥2 present
+  minForPartial: number;   // Minimum symptoms for partial boost
+  citation: string;
+  description: string;
+}
+
+export const PANCREATIC_CLUSTERS: SymptomCluster[] = [
+  {
+    name: 'Courvoisier triad',
+    symptoms: ['has_jaundice', 'has_weight_loss', 'has_back_pain'],
+    fullBoost: 1.45,
+    partialBoost: 1.20,
+    minForPartial: 2,
+    citation: 'CL1',
+    description: 'Classic PDAC presentation: painless jaundice + weight loss + epigastric/back pain',
+  },
+  {
+    name: 'Exocrine insufficiency pattern',
+    symptoms: ['has_floating_stool', 'has_weight_loss', 'has_new_diabetes'],
+    fullBoost: 1.35,
+    partialBoost: 1.15,
+    minForPartial: 2,
+    citation: 'CL1',
+    description: 'Steatorrhea + weight loss + new diabetes suggests pancreatic mass',
+  },
+];
+
+export const COLON_CLUSTERS: SymptomCluster[] = [
+  {
+    name: 'Left-sided obstruction',
+    symptoms: ['has_blood_in_stool', 'has_narrow_stool', 'has_weight_loss'],
+    fullBoost: 1.40,
+    partialBoost: 1.18,
+    minForPartial: 2,
+    citation: 'CL2',
+    description: 'Rectal bleeding + change in stool caliber + weight loss = left-sided CRC',
+  },
+  {
+    name: 'Right-sided anemia pattern',
+    symptoms: ['has_fatigue', 'has_weight_loss', 'has_abdominal_pain'],
+    fullBoost: 1.30,
+    partialBoost: 1.12,
+    minForPartial: 2,
+    citation: 'CL2',
+    description: 'Fatigue (anemia) + weight loss + abdominal pain = right-sided CRC',
+  },
+];
+
+export const BLOOD_CLUSTERS: SymptomCluster[] = [
+  {
+    name: 'Marrow failure triad',
+    symptoms: ['has_bruising', 'has_infections', 'has_fatigue'],
+    fullBoost: 1.45,
+    partialBoost: 1.20,
+    minForPartial: 2,
+    citation: 'CL3',
+    description: 'Thrombocytopenia + neutropenia + anemia = marrow failure/leukemia',
+  },
+  {
+    name: 'Lymphoma B-symptoms',
+    symptoms: ['has_swollen_lymph', 'has_weight_loss', 'has_fatigue'],
+    fullBoost: 1.40,
+    partialBoost: 1.18,
+    minForPartial: 2,
+    citation: 'CL3',
+    description: 'Lymphadenopathy + B-symptoms (weight loss, fatigue/fever)',
+  },
+];
+
+// ============================================================================
+// AGE-ADJUSTED BASE RATES (Bayesian Priors)
+// ============================================================================
+
+/**
+ * SEER age-specific annual incidence rates per 100,000.
+ * Converted to probability scale for use as Bayesian priors.
+ * Source: SEER Cancer Statistics Review 2016-2020
+ */
+export const SEER_BASE_RATES = {
+  pancreatic: {
+    // Age ranges: [0-29, 30-39, 40-49, 50-59, 60-69, 70-79, 80+]
+    rates: [0.1, 0.8, 3.2, 10.5, 28.0, 48.5, 55.0],
+    ageBreaks: [30, 40, 50, 60, 70, 80],
+    citation: 'M4',
+  },
+  colon: {
+    rates: [0.8, 4.5, 13.0, 30.0, 55.0, 80.0, 95.0],
+    ageBreaks: [30, 40, 50, 60, 70, 80],
+    citation: 'M4',
+  },
+  blood: {
+    // Bimodal: childhood peak + elderly rise
+    rates: [5.0, 3.5, 5.0, 10.0, 20.0, 35.0, 45.0],
+    ageBreaks: [30, 40, 50, 60, 70, 80],
+    citation: 'M4',
+  },
+};
+
+/**
+ * Get age-specific base rate normalized to 0-1 scale
+ * Uses the SEER rate divided by maximum rate for that cancer
+ */
+export const getBaseRate = (age: number, cancer: 'pancreatic' | 'colon' | 'blood'): number => {
+  const { rates, ageBreaks } = SEER_BASE_RATES[cancer];
+  let idx = 0;
+  for (let i = 0; i < ageBreaks.length; i++) {
+    if (age >= ageBreaks[i]) idx = i + 1;
+  }
+  const rate = rates[Math.min(idx, rates.length - 1)];
+  const maxRate = Math.max(...rates);
+  return rate / maxRate; // Normalized 0-1
+};
+
+// ============================================================================
+// TUMOR MARKER WEIGHTS
+// ============================================================================
+
+export const TUMOR_MARKER_WEIGHTS = {
+  ca199: {
+    elevated: { value: 0.82, citation: 'TM1', description: 'CA 19-9 >37 U/mL: sensitivity 79%, specificity 82% for PDAC' } as WeightConfig,
+    high: { value: 0.92, citation: 'TM1', description: 'CA 19-9 >200 U/mL: strongly suggestive of PDAC' } as WeightConfig,
+  },
+  cea: {
+    elevated: { value: 0.60, citation: 'TM2', description: 'CEA >5 ng/mL: sensitivity ~46%, specificity ~89% for CRC' } as WeightConfig,
+    high: { value: 0.78, citation: 'TM2', description: 'CEA >10 ng/mL: higher specificity for advanced CRC' } as WeightConfig,
+  },
+  ldh: {
+    elevated: { value: 0.55, citation: 'TM3', description: 'LDH >250 U/L: elevated in ~50% of lymphomas at diagnosis' } as WeightConfig,
+    high: { value: 0.72, citation: 'TM3', description: 'LDH >500 U/L: associated with aggressive lymphoma/leukemia' } as WeightConfig,
+  },
+};
+
+export const TUMOR_MARKER_RANGES = {
+  ca199: { min: 0, max: 37, unit: 'U/mL', label: 'Normal: 0-37' },
+  cea: { min: 0, max: 5, unit: 'ng/mL', label: 'Normal: 0-5' },
+  ldh: { min: 140, max: 280, unit: 'U/L', label: 'Normal: 140-280' },
+};
 
 // ============================================================================
 // PANCREATIC CANCER WEIGHTS

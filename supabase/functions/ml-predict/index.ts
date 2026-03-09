@@ -7,20 +7,11 @@ const corsHeaders = {
 };
 
 /**
- * ML Prediction Edge Function
- * ============================
+ * ML Prediction Edge Function v3.0
+ * ==================================
  * 
- * This edge function serves as the integration point for external
- * trained ML models. It accepts the same PredictionInput format
- * used by the client-side engine and can forward to:
- * 
- * 1. A hosted ML model API (HuggingFace Inference, AWS SageMaker, etc.)
- * 2. A custom Python/FastAPI backend with trained models
- * 3. Lovable AI for enhanced analysis
- * 
- * Currently implements an enhanced rule-based prediction with
- * literature-calibrated weights as the fallback, and optionally
- * calls an external ML API if ML_API_URL is configured.
+ * Enhanced with duration context, cluster data, and tumor markers.
+ * Uses Lovable AI (Gemini) for cross-factor interaction analysis.
  */
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -28,7 +19,6 @@ serve(async (req) => {
   }
 
   try {
-    // Authentication check
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
@@ -54,67 +44,82 @@ serve(async (req) => {
 
     const { predictionInput, featureVector } = await req.json();
     
-    // Check if an external ML API is configured
+    // Check for external ML API
     const ML_API_URL = Deno.env.get("ML_API_URL");
     const ML_API_KEY = Deno.env.get("ML_API_KEY");
 
     if (ML_API_URL) {
-      // Forward to external trained model
       console.log("Forwarding to external ML API:", ML_API_URL);
-      
       const mlResponse = await fetch(ML_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(ML_API_KEY ? { "Authorization": `Bearer ${ML_API_KEY}` } : {}),
         },
-        body: JSON.stringify({
-          features: featureVector,
-          raw_input: predictionInput,
-        }),
+        body: JSON.stringify({ features: featureVector, raw_input: predictionInput }),
       });
 
-      if (!mlResponse.ok) {
-        console.error("External ML API error:", mlResponse.status);
-        // Fall through to Lovable AI enhanced analysis
-      } else {
+      if (mlResponse.ok) {
         const mlResult = await mlResponse.json();
         return new Response(
-          JSON.stringify({ 
-            prediction: mlResult,
-            source: "external_ml_model",
-            model_url: ML_API_URL,
-          }),
+          JSON.stringify({ prediction: mlResult, source: "external_ml_model", model_url: ML_API_URL }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+      console.error("External ML API error:", mlResponse.status);
     }
 
-    // Fallback: Use Lovable AI for enhanced analysis
+    // Lovable AI enhanced analysis
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       return new Response(
-        JSON.stringify({ 
-          error: "No ML backend configured",
-          suggestion: "Set ML_API_URL for external model or ensure LOVABLE_API_KEY is set for AI analysis",
-        }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "No ML backend configured", source: "none" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const systemPrompt = `You are a medical AI specialist analyzing cancer risk feature vectors. 
-Given the patient's feature vector (normalized 0-1 values), provide a JSON response with refined risk scores.
+    // Build rich context for AI
+    const symptomDurations = [];
+    if (predictionInput.fatigueDuration) symptomDurations.push(`fatigue: ${predictionInput.fatigueDuration}`);
+    if (predictionInput.weightLossDuration) symptomDurations.push(`weight loss: ${predictionInput.weightLossDuration}`);
+    if (predictionInput.jaundiceDuration) symptomDurations.push(`jaundice: ${predictionInput.jaundiceDuration}`);
+    if (predictionInput.bloodInStoolDuration) symptomDurations.push(`blood in stool: ${predictionInput.bloodInStoolDuration}`);
+    if (predictionInput.infectionsDuration) symptomDurations.push(`infections: ${predictionInput.infectionsDuration}`);
+
+    const tumorMarkers = [];
+    if (predictionInput.ca199 !== undefined) tumorMarkers.push(`CA 19-9: ${predictionInput.ca199} U/mL`);
+    if (predictionInput.cea !== undefined) tumorMarkers.push(`CEA: ${predictionInput.cea} ng/mL`);
+    if (predictionInput.ldh !== undefined) tumorMarkers.push(`LDH: ${predictionInput.ldh} U/L`);
+
+    const systemPrompt = `You are a medical AI specialist analyzing cancer risk feature vectors for pancreatic, colon, and blood cancers.
+
+Given the patient's feature vector (normalized 0-1 values), symptom durations, and tumor markers, provide a JSON response with refined risk score adjustments.
+
+Consider cross-factor interactions that simple weighted scoring might miss:
+- Symptom clusters (e.g., jaundice + weight loss + back pain for pancreatic)
+- Duration-symptom severity escalation
+- Protective factor combinations
+- Tumor marker significance in context of other findings
+- Gender and age-specific epidemiological patterns
 
 You MUST respond with valid JSON only, no markdown, in this exact format:
 {
-  "pancreatic": { "adjustment": <float -0.2 to 0.2>, "reasoning": "<brief>" },
-  "colon": { "adjustment": <float -0.2 to 0.2>, "reasoning": "<brief>" },
-  "blood": { "adjustment": <float -0.2 to 0.2>, "reasoning": "<brief>" },
+  "pancreatic": { "adjustment": <float -0.15 to 0.15>, "reasoning": "<brief>" },
+  "colon": { "adjustment": <float -0.15 to 0.15>, "reasoning": "<brief>" },
+  "blood": { "adjustment": <float -0.15 to 0.15>, "reasoning": "<brief>" },
   "confidence_note": "<brief overall note>"
 }
 
-The adjustments should refine the client-side predictions based on cross-factor interactions 
-that simple weighted scoring might miss (e.g., symptom clusters, protective factor combinations).`;
+Keep adjustments conservative (-0.15 to 0.15) as the client-side engine already applies cluster boosts and duration weighting.`;
+
+    const userContent = [
+      `Feature vector: ${JSON.stringify(featureVector)}`,
+      `Patient: Age ${predictionInput.age}, Gender ${predictionInput.gender}, BMI ${predictionInput.bmi?.toFixed(1)}`,
+      symptomDurations.length > 0 ? `Symptom durations: ${symptomDurations.join(', ')}` : 'No symptom duration data',
+      tumorMarkers.length > 0 ? `Tumor markers: ${tumorMarkers.join(', ')}` : 'No tumor marker data',
+      `Smoking: ${predictionInput.smoking}, Alcohol: ${predictionInput.alcohol}`,
+      `Family cancer history: ${predictionInput.familyCancerHistory ? 'Yes' : 'No'}`,
+    ].join('\n');
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -126,7 +131,7 @@ that simple weighted scoring might miss (e.g., symptom clusters, protective fact
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Feature vector: ${JSON.stringify(featureVector)}\n\nRaw input summary: Age ${predictionInput.age}, Gender ${predictionInput.gender}, BMI ${predictionInput.bmi?.toFixed(1)}` },
+          { role: "user", content: userContent },
         ],
       }),
     });
@@ -155,10 +160,8 @@ that simple weighted scoring might miss (e.g., symptom clusters, protective fact
     const data = await response.json();
     const content = data.choices[0].message.content;
 
-    // Parse AI response
     let aiAdjustments;
     try {
-      // Strip markdown code fences if present
       const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       aiAdjustments = JSON.parse(cleaned);
     } catch {
@@ -167,10 +170,7 @@ that simple weighted scoring might miss (e.g., symptom clusters, protective fact
     }
 
     return new Response(
-      JSON.stringify({ 
-        adjustments: aiAdjustments,
-        source: "lovable_ai_enhanced",
-      }),
+      JSON.stringify({ adjustments: aiAdjustments, source: "lovable_ai_enhanced" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

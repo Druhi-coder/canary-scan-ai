@@ -1,6 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LAB_RANGES } from '@/lib/predictionEngine';
+import { TUMOR_MARKER_RANGES } from '@/lib/riskWeights';
 
 interface LabValueInputProps {
   id: string;
@@ -119,6 +120,49 @@ export const BloodSugarInput = ({ value, onChange }: { value: string; onChange: 
     normalRange={LAB_RANGES.bloodSugar.label}
     min={LAB_RANGES.bloodSugar.min}
     max={LAB_RANGES.bloodSugar.max}
+    step="1"
+  />
+);
+
+// Tumor Marker Inputs (v3.0)
+export const CA199Input = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+  <LabValueInput
+    id="ca199"
+    label="CA 19-9 (Pancreatic Marker)"
+    value={value}
+    onChange={onChange}
+    unit={TUMOR_MARKER_RANGES.ca199.unit}
+    normalRange={TUMOR_MARKER_RANGES.ca199.label}
+    min={TUMOR_MARKER_RANGES.ca199.min}
+    max={TUMOR_MARKER_RANGES.ca199.max}
+    step="1"
+  />
+);
+
+export const CEAInput = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+  <LabValueInput
+    id="cea"
+    label="CEA (Colon Marker)"
+    value={value}
+    onChange={onChange}
+    unit={TUMOR_MARKER_RANGES.cea.unit}
+    normalRange={TUMOR_MARKER_RANGES.cea.label}
+    min={TUMOR_MARKER_RANGES.cea.min}
+    max={TUMOR_MARKER_RANGES.cea.max}
+    step="0.1"
+  />
+);
+
+export const LDHInput = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+  <LabValueInput
+    id="ldh"
+    label="LDH (Blood Cancer Marker)"
+    value={value}
+    onChange={onChange}
+    unit={TUMOR_MARKER_RANGES.ldh.unit}
+    normalRange={TUMOR_MARKER_RANGES.ldh.label}
+    min={TUMOR_MARKER_RANGES.ldh.min}
+    max={TUMOR_MARKER_RANGES.ldh.max}
     step="1"
   />
 );

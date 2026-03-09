@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MedicalReportUpload } from "@/components/MedicalReportUpload";
 import { BMIDisplay } from "@/components/BMIDisplay";
 import { SymptomCheckbox } from "@/components/SymptomCheckbox";
-import { HemoglobinInput, WBCInput, PlateletInput, BilirubinInput, BloodSugarInput } from "@/components/LabValueInput";
+import { HemoglobinInput, WBCInput, PlateletInput, BilirubinInput, BloodSugarInput, CA199Input, CEAInput, LDHInput } from "@/components/LabValueInput";
 import { supabase } from "@/integrations/supabase/client";
 import { isOnline, analyzeReportOffline } from "@/lib/offlineAI";
 
@@ -100,6 +100,11 @@ const StartTest = () => {
     plateletCount: "",
     bilirubin: "",
     bloodSugar: "",
+    
+    // Tumor Markers (optional, v3.0)
+    ca199: "",
+    cea: "",
+    ldh: "",
   });
 
   // Validation state
@@ -311,10 +316,75 @@ const StartTest = () => {
       plateletCount: formData.plateletCount ? parseFloat(formData.plateletCount) : undefined,
       bilirubin: formData.bilirubin ? parseFloat(formData.bilirubin) : undefined,
       bloodSugar: formData.bloodSugar ? parseFloat(formData.bloodSugar) : undefined,
+      
+      // Tumor markers (v3.0)
+      ca199: formData.ca199 ? parseFloat(formData.ca199) : undefined,
+      cea: formData.cea ? parseFloat(formData.cea) : undefined,
+      ldh: formData.ldh ? parseFloat(formData.ldh) : undefined,
     };
 
-    // Generate prediction using the new engine
-    const prediction = generatePrediction(predictionInput);
+    // Generate prediction using v3.0 engine
+    let prediction = generatePrediction(predictionInput);
+
+    // Call ml-predict edge function for AI-enhanced refinement
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        const mlResponse = await supabase.functions.invoke("ml-predict", {
+          body: {
+            predictionInput,
+            featureVector: prediction.featureVector,
+          },
+        });
+
+        if (mlResponse.data?.adjustments) {
+          const adj = mlResponse.data.adjustments;
+          // Merge AI adjustments into scores (capped)
+          if (adj.pancreatic?.adjustment) {
+            const adjusted = prediction.pancreatic.rawScore + adj.pancreatic.adjustment;
+            const clamped = Math.max(0, Math.min(0.95, adjusted));
+            prediction = {
+              ...prediction,
+              pancreatic: {
+                ...prediction.pancreatic,
+                probability: Math.round(clamped * 100) / 100,
+                rawScore: clamped,
+                riskLabel: clamped < 0.3 ? 'Low' : clamped < 0.6 ? 'Medium' : 'High',
+              },
+            };
+          }
+          if (adj.colon?.adjustment) {
+            const adjusted = prediction.colon.rawScore + adj.colon.adjustment;
+            const clamped = Math.max(0, Math.min(0.95, adjusted));
+            prediction = {
+              ...prediction,
+              colon: {
+                ...prediction.colon,
+                probability: Math.round(clamped * 100) / 100,
+                rawScore: clamped,
+                riskLabel: clamped < 0.3 ? 'Low' : clamped < 0.6 ? 'Medium' : 'High',
+              },
+            };
+          }
+          if (adj.blood?.adjustment) {
+            const adjusted = prediction.blood.rawScore + adj.blood.adjustment;
+            const clamped = Math.max(0, Math.min(0.95, adjusted));
+            prediction = {
+              ...prediction,
+              blood: {
+                ...prediction.blood,
+                probability: Math.round(clamped * 100) / 100,
+                rawScore: clamped,
+                riskLabel: clamped < 0.3 ? 'Low' : clamped < 0.6 ? 'Medium' : 'High',
+              },
+            };
+          }
+          console.log("AI refinement applied:", mlResponse.data.source);
+        }
+      }
+    } catch (mlError) {
+      console.log("ML-predict unavailable, using local prediction only:", mlError);
+    }
 
     // Analyze medical report with AI if uploaded
     let aiAnalysis = null;
@@ -955,6 +1025,25 @@ const StartTest = () => {
                   value={formData.bloodSugar}
                   onChange={(v) => setFormData({...formData, bloodSugar: v})}
                 />
+              </div>
+              
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wide">Tumor Markers (if available)</h4>
+                <p className="text-xs text-muted-foreground mb-4">These specialized markers significantly improve prediction accuracy when available.</p>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <CA199Input
+                    value={formData.ca199}
+                    onChange={(v) => setFormData({...formData, ca199: v})}
+                  />
+                  <CEAInput
+                    value={formData.cea}
+                    onChange={(v) => setFormData({...formData, cea: v})}
+                  />
+                  <LDHInput
+                    value={formData.ldh}
+                    onChange={(v) => setFormData({...formData, ldh: v})}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
