@@ -100,6 +100,11 @@ const StartTest = () => {
     plateletCount: "",
     bilirubin: "",
     bloodSugar: "",
+    
+    // Tumor Markers (optional, v3.0)
+    ca199: "",
+    cea: "",
+    ldh: "",
   });
 
   // Validation state
