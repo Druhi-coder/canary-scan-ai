@@ -316,6 +316,11 @@ const StartTest = () => {
       plateletCount: formData.plateletCount ? parseFloat(formData.plateletCount) : undefined,
       bilirubin: formData.bilirubin ? parseFloat(formData.bilirubin) : undefined,
       bloodSugar: formData.bloodSugar ? parseFloat(formData.bloodSugar) : undefined,
+      
+      // Tumor markers (v3.0)
+      ca199: formData.ca199 ? parseFloat(formData.ca199) : undefined,
+      cea: formData.cea ? parseFloat(formData.cea) : undefined,
+      ldh: formData.ldh ? parseFloat(formData.ldh) : undefined,
     };
 
     // Generate prediction using the new engine
