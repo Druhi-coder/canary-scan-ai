@@ -323,8 +323,68 @@ const StartTest = () => {
       ldh: formData.ldh ? parseFloat(formData.ldh) : undefined,
     };
 
-    // Generate prediction using the new engine
-    const prediction = generatePrediction(predictionInput);
+    // Generate prediction using v3.0 engine
+    let prediction = generatePrediction(predictionInput);
+
+    // Call ml-predict edge function for AI-enhanced refinement
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        const mlResponse = await supabase.functions.invoke("ml-predict", {
+          body: {
+            predictionInput,
+            featureVector: prediction.featureVector,
+          },
+        });
+
+        if (mlResponse.data?.adjustments) {
+          const adj = mlResponse.data.adjustments;
+          // Merge AI adjustments into scores (capped)
+          if (adj.pancreatic?.adjustment) {
+            const adjusted = prediction.pancreatic.rawScore + adj.pancreatic.adjustment;
+            const clamped = Math.max(0, Math.min(0.95, adjusted));
+            prediction = {
+              ...prediction,
+              pancreatic: {
+                ...prediction.pancreatic,
+                probability: Math.round(clamped * 100) / 100,
+                rawScore: clamped,
+                riskLabel: clamped < 0.3 ? 'Low' : clamped < 0.6 ? 'Medium' : 'High',
+              },
+            };
+          }
+          if (adj.colon?.adjustment) {
+            const adjusted = prediction.colon.rawScore + adj.colon.adjustment;
+            const clamped = Math.max(0, Math.min(0.95, adjusted));
+            prediction = {
+              ...prediction,
+              colon: {
+                ...prediction.colon,
+                probability: Math.round(clamped * 100) / 100,
+                rawScore: clamped,
+                riskLabel: clamped < 0.3 ? 'Low' : clamped < 0.6 ? 'Medium' : 'High',
+              },
+            };
+          }
+          if (adj.blood?.adjustment) {
+            const adjusted = prediction.blood.rawScore + adj.blood.adjustment;
+            const clamped = Math.max(0, Math.min(0.95, adjusted));
+            prediction = {
+              ...prediction,
+              blood: {
+                ...prediction.blood,
+                probability: Math.round(clamped * 100) / 100,
+                rawScore: clamped,
+                riskLabel: clamped < 0.3 ? 'Low' : clamped < 0.6 ? 'Medium' : 'High',
+              },
+            };
+          }
+          console.log("AI refinement applied:", mlResponse.data.source);
+        }
+      }
+    } catch (mlError) {
+      console.log("ML-predict unavailable, using local prediction only:", mlError);
+    }
 
     // Analyze medical report with AI if uploaded
     let aiAnalysis = null;
