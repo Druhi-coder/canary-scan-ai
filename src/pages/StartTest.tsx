@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MedicalReportUpload } from "@/components/MedicalReportUpload";
 import { BMIDisplay } from "@/components/BMIDisplay";
 import { SymptomCheckbox } from "@/components/SymptomCheckbox";
-import { HemoglobinInput, WBCInput, PlateletInput, BilirubinInput, BloodSugarInput } from "@/components/LabValueInput";
+import { HemoglobinInput, WBCInput, PlateletInput, BilirubinInput, BloodSugarInput, CA199Input, CEAInput, LDHInput } from "@/components/LabValueInput";
 import { supabase } from "@/integrations/supabase/client";
 import { isOnline, analyzeReportOffline } from "@/lib/offlineAI";
 
