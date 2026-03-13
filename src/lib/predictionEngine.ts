@@ -683,12 +683,13 @@ const calculateBloodRisk = (fv: FeatureVector, input: PredictionInput): number =
 
   // Cluster boost
   const clusterBoost = evaluateClusters(fv, BLOOD_CLUSTERS);
-  finalScore = Math.min(finalScore * clusterBoost, 0.95);
+  finalScore = finalScore * clusterBoost;
 
   // Gender modifier
-  finalScore = Math.min(finalScore * getGenderModifier(input.gender, 'blood'), 0.95);
+  finalScore = finalScore * getGenderModifier(input.gender, 'blood');
 
-  return finalScore;
+  // Compress into clinically meaningful range
+  return compressScore(finalScore);
 };
 
 // ============================================================================
