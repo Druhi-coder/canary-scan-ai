@@ -244,10 +244,31 @@ export interface DebugData {
 // ============================================================================
 
 const THRESHOLDS = {
-  LOW_RISK: 0.3,
-  MEDIUM_RISK: 0.6,
+  LOW_RISK: 0.25,
+  MEDIUM_RISK: 0.50,
   LOW_CONFIDENCE: 0.4,
   MEDIUM_CONFIDENCE: 0.7,
+};
+
+/**
+ * Maximum clinically meaningful risk cap.
+ * Even with every risk factor present, a screening tool should not produce
+ * near-100% scores — that implies diagnostic certainty this tool cannot provide.
+ * Cap at 78% to reflect population-level risk estimation limits.
+ */
+const RISK_HARD_CAP = 0.78;
+
+/**
+ * Sigmoid-like compression to create diminishing returns at higher scores.
+ * Maps raw 0-1 scores into a compressed 0-RISK_HARD_CAP range where
+ * scores above ~0.5 raw get increasingly compressed.
+ * 
+ * Formula: cap * (2 / (1 + e^(-k*x)) - 1) where k controls steepness
+ */
+const compressScore = (rawScore: number): number => {
+  const k = 3.5; // Steepness: higher = sharper knee
+  const compressed = RISK_HARD_CAP * (2 / (1 + Math.exp(-k * rawScore)) - 1);
+  return Math.min(compressed, RISK_HARD_CAP);
 };
 
 export const LAB_RANGES = {
