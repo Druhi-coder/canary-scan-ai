@@ -244,10 +244,31 @@ export interface DebugData {
 // ============================================================================
 
 const THRESHOLDS = {
-  LOW_RISK: 0.3,
-  MEDIUM_RISK: 0.6,
+  LOW_RISK: 0.25,
+  MEDIUM_RISK: 0.50,
   LOW_CONFIDENCE: 0.4,
   MEDIUM_CONFIDENCE: 0.7,
+};
+
+/**
+ * Maximum clinically meaningful risk cap.
+ * Even with every risk factor present, a screening tool should not produce
+ * near-100% scores — that implies diagnostic certainty this tool cannot provide.
+ * Cap at 78% to reflect population-level risk estimation limits.
+ */
+const RISK_HARD_CAP = 0.78;
+
+/**
+ * Sigmoid-like compression to create diminishing returns at higher scores.
+ * Maps raw 0-1 scores into a compressed 0-RISK_HARD_CAP range where
+ * scores above ~0.5 raw get increasingly compressed.
+ * 
+ * Formula: cap * (2 / (1 + e^(-k*x)) - 1) where k controls steepness
+ */
+const compressScore = (rawScore: number): number => {
+  const k = 3.5; // Steepness: higher = sharper knee
+  const compressed = RISK_HARD_CAP * (2 / (1 + Math.exp(-k * rawScore)) - 1);
+  return Math.min(compressed, RISK_HARD_CAP);
 };
 
 export const LAB_RANGES = {
@@ -503,14 +524,15 @@ const calculatePancreaticRisk = (fv: FeatureVector, input: PredictionInput): num
 
   let finalScore = Math.min(score / Math.max(weightSum, 0.01), 1);
 
-  // Apply cluster boost
+  // Apply cluster boost (multiplicative, pre-compression)
   const clusterBoost = evaluateClusters(fv, PANCREATIC_CLUSTERS);
-  finalScore = Math.min(finalScore * clusterBoost, 0.95);
+  finalScore = finalScore * clusterBoost;
 
-  // Apply gender modifier
-  finalScore = Math.min(finalScore * getGenderModifier(input.gender, 'pancreatic'), 0.95);
+  // Apply gender modifier (multiplicative, pre-compression)
+  finalScore = finalScore * getGenderModifier(input.gender, 'pancreatic');
 
-  return finalScore;
+  // Compress into clinically meaningful range
+  return compressScore(finalScore);
 };
 
 const calculateColonRisk = (fv: FeatureVector, input: PredictionInput): number => {
@@ -584,12 +606,13 @@ const calculateColonRisk = (fv: FeatureVector, input: PredictionInput): number =
 
   // Cluster boost
   const clusterBoost = evaluateClusters(fv, COLON_CLUSTERS);
-  finalScore = Math.min(finalScore * clusterBoost, 0.95);
+  finalScore = finalScore * clusterBoost;
 
   // Gender modifier
-  finalScore = Math.min(finalScore * getGenderModifier(input.gender, 'colon'), 0.95);
+  finalScore = finalScore * getGenderModifier(input.gender, 'colon');
 
-  return finalScore;
+  // Compress into clinically meaningful range
+  return compressScore(finalScore);
 };
 
 const calculateBloodRisk = (fv: FeatureVector, input: PredictionInput): number => {
@@ -660,12 +683,13 @@ const calculateBloodRisk = (fv: FeatureVector, input: PredictionInput): number =
 
   // Cluster boost
   const clusterBoost = evaluateClusters(fv, BLOOD_CLUSTERS);
-  finalScore = Math.min(finalScore * clusterBoost, 0.95);
+  finalScore = finalScore * clusterBoost;
 
   // Gender modifier
-  finalScore = Math.min(finalScore * getGenderModifier(input.gender, 'blood'), 0.95);
+  finalScore = finalScore * getGenderModifier(input.gender, 'blood');
 
-  return finalScore;
+  // Compress into clinically meaningful range
+  return compressScore(finalScore);
 };
 
 // ============================================================================
@@ -942,7 +966,7 @@ export const generatePrediction = (input: PredictionInput): PredictionResult => 
       thresholds: {
         lowRisk: THRESHOLDS.LOW_RISK,
         mediumRisk: THRESHOLDS.MEDIUM_RISK,
-        highRisk: 1.0,
+        highRisk: RISK_HARD_CAP,
         lowConfidence: THRESHOLDS.LOW_CONFIDENCE,
         mediumConfidence: THRESHOLDS.MEDIUM_CONFIDENCE,
       },
