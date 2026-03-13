@@ -966,7 +966,7 @@ export const generatePrediction = (input: PredictionInput): PredictionResult => 
       thresholds: {
         lowRisk: THRESHOLDS.LOW_RISK,
         mediumRisk: THRESHOLDS.MEDIUM_RISK,
-        highRisk: 1.0,
+        highRisk: RISK_HARD_CAP,
         lowConfidence: THRESHOLDS.LOW_CONFIDENCE,
         mediumConfidence: THRESHOLDS.MEDIUM_CONFIDENCE,
       },
