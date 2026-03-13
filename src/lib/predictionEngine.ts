@@ -524,14 +524,15 @@ const calculatePancreaticRisk = (fv: FeatureVector, input: PredictionInput): num
 
   let finalScore = Math.min(score / Math.max(weightSum, 0.01), 1);
 
-  // Apply cluster boost
+  // Apply cluster boost (multiplicative, pre-compression)
   const clusterBoost = evaluateClusters(fv, PANCREATIC_CLUSTERS);
-  finalScore = Math.min(finalScore * clusterBoost, 0.95);
+  finalScore = finalScore * clusterBoost;
 
-  // Apply gender modifier
-  finalScore = Math.min(finalScore * getGenderModifier(input.gender, 'pancreatic'), 0.95);
+  // Apply gender modifier (multiplicative, pre-compression)
+  finalScore = finalScore * getGenderModifier(input.gender, 'pancreatic');
 
-  return finalScore;
+  // Compress into clinically meaningful range
+  return compressScore(finalScore);
 };
 
 const calculateColonRisk = (fv: FeatureVector, input: PredictionInput): number => {
