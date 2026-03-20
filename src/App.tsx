@@ -10,6 +10,7 @@ import StartTest from "./pages/StartTest";
 import Results from "./pages/Results";
 import MyReports from "./pages/MyReports";
 import ResearchMode from "./pages/ResearchMode";
+import ResearchDashboard from "./pages/ResearchDashboard";
 import Research from "./pages/Research";
 import About from "./pages/About";
 import Auth from "./pages/Auth";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/results" element={<ProtectedRoute><Results /></ProtectedRoute>} />
             <Route path="/my-reports" element={<ProtectedRoute><MyReports /></ProtectedRoute>} />
             <Route path="/research-mode" element={<ProtectedRoute><ResearchMode /></ProtectedRoute>} />
+            <Route path="/research-dashboard" element={<ProtectedRoute><ResearchDashboard /></ProtectedRoute>} />
             <Route path="/research" element={<Research />} />
             <Route path="/how-it-works" element={<Research />} />
             <Route path="/about" element={<About />} />

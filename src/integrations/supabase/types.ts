@@ -56,6 +56,113 @@ export type Database = {
         }
         Relationships: []
       }
+      datasets: {
+        Row: {
+          column_count: number | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          row_count: number | null
+          sample_data: Json | null
+          schema_info: Json | null
+          source: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          column_count?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          row_count?: number | null
+          sample_data?: Json | null
+          schema_info?: Json | null
+          source?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          column_count?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          row_count?: number | null
+          sample_data?: Json | null
+          schema_info?: Json | null
+          source?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      experiments: {
+        Row: {
+          confusion_matrix: Json | null
+          created_at: string
+          dataset_id: string | null
+          feature_importance: Json | null
+          hyperparameters: Json | null
+          id: string
+          metrics: Json | null
+          model_type: string
+          model_version: string | null
+          name: string
+          notes: string | null
+          roc_data: Json | null
+          shap_values: Json | null
+          status: string
+          training_duration_ms: number | null
+          user_id: string
+        }
+        Insert: {
+          confusion_matrix?: Json | null
+          created_at?: string
+          dataset_id?: string | null
+          feature_importance?: Json | null
+          hyperparameters?: Json | null
+          id?: string
+          metrics?: Json | null
+          model_type: string
+          model_version?: string | null
+          name: string
+          notes?: string | null
+          roc_data?: Json | null
+          shap_values?: Json | null
+          status?: string
+          training_duration_ms?: number | null
+          user_id: string
+        }
+        Update: {
+          confusion_matrix?: Json | null
+          created_at?: string
+          dataset_id?: string | null
+          feature_importance?: Json | null
+          hyperparameters?: Json | null
+          id?: string
+          metrics?: Json | null
+          model_type?: string
+          model_version?: string | null
+          name?: string
+          notes?: string | null
+          roc_data?: Json | null
+          shap_values?: Json | null
+          status?: string
+          training_duration_ms?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experiments_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
