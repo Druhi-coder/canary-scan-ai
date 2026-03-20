@@ -101,7 +101,7 @@ export default function DatasetManager({ datasets, onRefresh }: Props) {
         schema_info: { columns: columns.map((c: string) => ({ name: c, type: "numeric", nullable: false })) },
         sample_data: rows.slice(0, 5),
         status: "ready",
-      });
+      } as any);
 
       toast({ title: "Synthetic dataset generated", description: `${rows.length} patient records created` });
       onRefresh();
