@@ -56,10 +56,10 @@ export default function DatasetManager({ datasets, onRefresh }: Props) {
         source: "upload",
         row_count: result.rowCount,
         column_count: result.columnCount,
-        schema_info: result.schema,
-        sample_data: sampleData,
+        schema_info: result.schema as any,
+        sample_data: sampleData as any,
         status: result.valid ? "ready" : "needs_review",
-      });
+      } as any);
 
       if (error) throw error;
       toast({ title: "Dataset uploaded", description: `${result.rowCount} rows, ${result.columnCount} columns` });
