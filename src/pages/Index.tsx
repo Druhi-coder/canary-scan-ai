@@ -19,6 +19,7 @@ const Index = () => {
           <nav className="hidden md:flex gap-6">
             <Button variant="ghost" onClick={() => navigate("/about")}>About</Button>
             <Button variant="ghost" onClick={() => navigate("/research-mode")}>Research</Button>
+            <Button variant="ghost" onClick={() => navigate("/research-dashboard")}>ML Dashboard</Button>
             <Button variant="ghost" onClick={() => navigate("/my-reports")}>My Reports</Button>
             {user ? (
               <Button variant="outline" onClick={signOut} className="gap-2">
