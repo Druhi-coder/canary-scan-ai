@@ -28,23 +28,24 @@ Deno.serve(async (req) => {
     }
 
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const mlApiKey = Deno.env.get("ML_API_KEY");
     const token = authHeader.replace("Bearer ", "");
-    const isServiceRole = token === serviceRoleKey;
-    console.log("Auth check:", { hasServiceRole: !!serviceRoleKey, isServiceRole, tokenPrefix: token.substring(0, 20) });
+    const isPrivileged = token === serviceRoleKey || (mlApiKey && token === mlApiKey);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      isServiceRole ? serviceRoleKey! : Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      isPrivileged ? serviceRoleKey! : Deno.env.get("SUPABASE_ANON_KEY")!,
+      isPrivileged 
+        ? { global: { headers: { Authorization: `Bearer ${serviceRoleKey}` } } }
+        : { global: { headers: { Authorization: authHeader } } }
     );
 
     let userId: string;
-    if (isServiceRole) {
-      // Service role: trust the user_id from the request body
+    if (isPrivileged) {
       const body = await req.clone().json();
       userId = body.userId || body.user_id || "";
       if (!userId) {
-        return new Response(JSON.stringify({ error: "user_id required for service role" }), {
+        return new Response(JSON.stringify({ error: "user_id required for service auth" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
