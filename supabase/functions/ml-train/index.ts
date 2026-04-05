@@ -12,7 +12,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
+    let authHeader = req.headers.get("Authorization");
+    // Fall back to apikey header if no Authorization provided
+    if (!authHeader) {
+      const apikey = req.headers.get("apikey");
+      if (apikey) {
+        authHeader = `Bearer ${apikey}`;
+      }
+    }
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization header" }), {
         status: 401,
