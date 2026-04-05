@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
           model_version: `CANary-${modelType}-v1.0`,
         })
         .eq("id", experimentId)
-        .eq("user_id", user.id);
+        .eq("user_id", userId);
 
       if (updateError) throw updateError;
 
