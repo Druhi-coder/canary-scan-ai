@@ -28,9 +28,9 @@ Deno.serve(async (req) => {
     }
 
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const token = authHeader.replace("Bearer ", "");
-    const isServiceRole = token === serviceRoleKey || token === anonKey;
+    const isServiceRole = token === serviceRoleKey;
+    console.log("Auth check:", { hasServiceRole: !!serviceRoleKey, isServiceRole, tokenPrefix: token.substring(0, 20) });
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
