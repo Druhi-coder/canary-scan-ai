@@ -12,7 +12,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
+    let authHeader = req.headers.get("Authorization");
+    // Fall back to apikey header if no Authorization provided
+    if (!authHeader) {
+      const apikey = req.headers.get("apikey");
+      if (apikey) {
+        authHeader = `Bearer ${apikey}`;
+      }
+    }
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization header" }), {
         status: 401,
@@ -20,18 +27,38 @@ Deno.serve(async (req) => {
       });
     }
 
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const mlApiKey = Deno.env.get("ML_API_KEY");
+    const token = authHeader.replace("Bearer ", "");
+    const isPrivileged = token === serviceRoleKey || (mlApiKey && token === mlApiKey);
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      isPrivileged ? serviceRoleKey! : Deno.env.get("SUPABASE_ANON_KEY")!,
+      isPrivileged 
+        ? { global: { headers: { Authorization: `Bearer ${serviceRoleKey}` } } }
+        : { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let userId: string;
+    if (isPrivileged) {
+      const body = await req.clone().json();
+      userId = body.userId || body.user_id || "";
+      if (!userId) {
+        return new Response(JSON.stringify({ error: "user_id required for service auth" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      userId = user.id;
     }
 
     const { action, experimentId, datasetId, modelType, hyperparameters, datasetData } = await req.json();
@@ -97,7 +124,7 @@ Deno.serve(async (req) => {
           model_version: `CANary-${modelType}-v1.0`,
         })
         .eq("id", experimentId)
-        .eq("user_id", user.id);
+        .eq("user_id", userId);
 
       if (updateError) throw updateError;
 
