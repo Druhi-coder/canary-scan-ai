@@ -20,18 +20,35 @@ Deno.serve(async (req) => {
       });
     }
 
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const isServiceRole = authHeader === `Bearer ${serviceRoleKey}`;
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
+      isServiceRole ? serviceRoleKey! : Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let userId: string;
+    if (isServiceRole) {
+      // Service role: trust the user_id from the request body
+      const body = await req.clone().json();
+      userId = body.userId || body.user_id || "";
+      if (!userId) {
+        return new Response(JSON.stringify({ error: "user_id required for service role" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      userId = user.id;
     }
 
     const { action, experimentId, datasetId, modelType, hyperparameters, datasetData } = await req.json();
