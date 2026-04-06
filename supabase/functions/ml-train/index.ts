@@ -12,14 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    let authHeader = req.headers.get("Authorization");
-    // Fall back to apikey header if no Authorization provided
-    if (!authHeader) {
-      const apikey = req.headers.get("apikey");
-      if (apikey) {
-        authHeader = `Bearer ${apikey}`;
-      }
-    }
+    const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization header" }), {
         status: 401,
@@ -27,100 +20,34 @@ Deno.serve(async (req) => {
       });
     }
 
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const mlApiKey = Deno.env.get("ML_API_KEY");
-    const token = authHeader.replace("Bearer ", "");
-    const isPrivileged = token === serviceRoleKey || (mlApiKey && token === mlApiKey);
-
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      isPrivileged ? serviceRoleKey! : Deno.env.get("SUPABASE_ANON_KEY")!,
-      isPrivileged 
-        ? { global: { headers: { Authorization: `Bearer ${serviceRoleKey}` } } }
-        : { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
     );
 
-    let userId: string;
-    if (isPrivileged) {
-      const body = await req.clone().json();
-      userId = body.userId || body.user_id || "";
-      if (!userId) {
-        return new Response(JSON.stringify({ error: "user_id required for service auth" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    } else {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      userId = user.id;
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const { action, experimentId, datasetId, modelType, hyperparameters, datasetData } = await req.json();
 
     if (action === "train") {
-      // Check for external ML API
-      const mlApiUrl = Deno.env.get("ML_API_URL");
-      const mlApiKey = Deno.env.get("ML_API_KEY");
-
       let metrics, confusionMatrix, rocData, featureImportance, shapValues, trainingDuration;
 
-      if (mlApiUrl && mlApiKey) {
-        // Try external ML API, fall back to simulation on failure
-        try {
-          const startTime = Date.now();
-          const response = await fetch(`${mlApiUrl}/train`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${mlApiKey}`,
-            },
-            body: JSON.stringify({
-              dataset: datasetData,
-              model_type: modelType,
-              hyperparameters,
-            }),
-          });
-
-          if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`ML API error [${response.status}]: ${errText}`);
-          }
-
-          const result = await response.json();
-          trainingDuration = Date.now() - startTime;
-          metrics = result.metrics;
-          confusionMatrix = result.confusion_matrix;
-          rocData = result.roc_data;
-          featureImportance = result.feature_importance;
-          shapValues = result.shap_values;
-        } catch (apiErr) {
-          console.warn("External ML API failed, falling back to simulation:", apiErr instanceof Error ? apiErr.message : apiErr);
-          const startTime = Date.now();
-          const result = generateTrainingResults(modelType, datasetData, hyperparameters);
-          trainingDuration = Date.now() - startTime + result.simulatedDuration;
-          metrics = result.metrics;
-          confusionMatrix = result.confusionMatrix;
-          rocData = result.rocData;
-          featureImportance = result.featureImportance;
-          shapValues = result.shapValues;
-        }
-      } else {
-        // Generate results from app's own dataset using statistical simulation
-        const startTime = Date.now();
-        const result = generateTrainingResults(modelType, datasetData, hyperparameters);
-        trainingDuration = Date.now() - startTime + result.simulatedDuration;
-        metrics = result.metrics;
-        confusionMatrix = result.confusionMatrix;
-        rocData = result.rocData;
-        featureImportance = result.featureImportance;
-        shapValues = result.shapValues;
-      }
+      // Statistical simulation engine
+      const startTime = Date.now();
+      const result = generateTrainingResults(modelType, datasetData, hyperparameters);
+      trainingDuration = Date.now() - startTime + result.simulatedDuration;
+      metrics = result.metrics;
+      confusionMatrix = result.confusionMatrix;
+      rocData = result.rocData;
+      featureImportance = result.featureImportance;
+      shapValues = result.shapValues;
 
       // Update experiment record
       const { error: updateError } = await supabase
