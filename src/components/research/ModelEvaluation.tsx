@@ -16,6 +16,7 @@ interface Experiment {
   roc_data: any;
   feature_importance: any;
   shap_values: any;
+  hyperparameters: any;
   training_duration_ms: number;
   status: string;
   created_at: string;
