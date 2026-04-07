@@ -135,11 +135,18 @@ export default function ModelEvaluation({ experiments }: Props) {
                       {MODEL_NAMES[exp.model_type] || exp.model_type}
                       {isBest && <Badge className="ml-2 text-xs" variant="default">Best</Badge>}
                     </TableCell>
-                    {Object.keys(METRIC_LABELS).map((key) => (
-                      <TableCell key={key} className="text-right tabular-nums">
-                        {((exp.metrics?.[key] || 0) * 100).toFixed(1)}%
-                      </TableCell>
-                    ))}
+                    {Object.keys(METRIC_LABELS).map((key) => {
+                      const cvResults = exp.hyperparameters?.cv_results;
+                      const std = cvResults?.std?.[key];
+                      return (
+                        <TableCell key={key} className="text-right tabular-nums">
+                          {((exp.metrics?.[key] || 0) * 100).toFixed(1)}%
+                          {std != null && (
+                            <span className="text-xs text-muted-foreground ml-1">±{(std * 100).toFixed(1)}</span>
+                          )}
+                        </TableCell>
+                      );
+                    })}
                     <TableCell className="text-right tabular-nums">
                       {exp.training_duration_ms?.toLocaleString()}
                     </TableCell>
