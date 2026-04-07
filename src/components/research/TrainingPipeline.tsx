@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -208,6 +209,35 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
               onChange={(e) => setExperimentName(e.target.value)}
               placeholder="e.g., baseline_rf_v1"
             />
+          </div>
+
+          {/* Cross-Validation Toggle */}
+          <div className="rounded-lg border border-border p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" />
+                <Label className="text-sm font-medium">K-Fold Cross-Validation</Label>
+              </div>
+              <Switch checked={cvEnabled} onCheckedChange={setCvEnabled} />
+            </div>
+            {cvEnabled && (
+              <div className="flex items-center gap-3">
+                <Label className="text-xs text-muted-foreground whitespace-nowrap">Number of folds (k):</Label>
+                <Select value={String(cvFolds)} onValueChange={(v) => setCvFolds(Number(v))}>
+                  <SelectTrigger className="w-24 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[3, 5, 7, 10].map((k) => (
+                      <SelectItem key={k} value={String(k)}>{k}-fold</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground">
+                  More folds = more robust estimates, longer training
+                </span>
+              </div>
+            )}
           </div>
 
           {selectedModel && Object.keys(hyperparams).length > 0 && (
