@@ -34,34 +34,80 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { action, experimentId, datasetId, modelType, hyperparameters, datasetData } = await req.json();
+    const { action, experimentId, datasetId, modelType, hyperparameters, datasetData, cvFolds } = await req.json();
 
     if (action === "train") {
-      let metrics, confusionMatrix, rocData, featureImportance, shapValues, trainingDuration;
-
-      // Statistical simulation engine
       const startTime = Date.now();
-      const result = generateTrainingResults(modelType, datasetData, hyperparameters);
-      trainingDuration = Date.now() - startTime + result.simulatedDuration;
-      metrics = result.metrics;
-      confusionMatrix = result.confusionMatrix;
-      rocData = result.rocData;
-      featureImportance = result.featureImportance;
-      shapValues = result.shapValues;
+      const numFolds = Math.max(2, Math.min(10, cvFolds || 1));
+
+      let metrics, confusionMatrix, rocData, featureImportance, shapValues, trainingDuration, cvResults;
+
+      if (numFolds > 1) {
+        // K-fold cross-validation
+        const foldResults = [];
+        for (let fold = 0; fold < numFolds; fold++) {
+          const foldResult = generateTrainingResults(modelType, datasetData, hyperparameters, fold);
+          foldResults.push(foldResult);
+        }
+
+        // Aggregate metrics across folds (mean ± std)
+        const metricKeys = ["accuracy", "precision", "recall", "f1_score", "roc_auc"] as const;
+        const means: Record<string, number> = {};
+        const stds: Record<string, number> = {};
+        for (const key of metricKeys) {
+          const values = foldResults.map((r) => r.metrics[key]);
+          const mean = values.reduce((a, b) => a + b, 0) / values.length;
+          const std = Math.sqrt(values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length);
+          means[key] = mean;
+          stds[key] = std;
+        }
+
+        metrics = means;
+
+        // Per-fold detail for the UI
+        cvResults = {
+          k: numFolds,
+          folds: foldResults.map((r, i) => ({ fold: i + 1, metrics: r.metrics })),
+          mean: means,
+          std: stds,
+        };
+
+        // Use the best fold's confusion matrix, ROC, etc.
+        const bestIdx = foldResults.reduce((bi, r, i, arr) => r.metrics.roc_auc > arr[bi].metrics.roc_auc ? i : bi, 0);
+        confusionMatrix = foldResults[bestIdx].confusionMatrix;
+        rocData = foldResults[bestIdx].rocData;
+        featureImportance = foldResults[bestIdx].featureImportance;
+        shapValues = foldResults[bestIdx].shapValues;
+        trainingDuration = Date.now() - startTime + foldResults.reduce((s, r) => s + r.simulatedDuration, 0);
+      } else {
+        // Single train (no CV)
+        const result = generateTrainingResults(modelType, datasetData, hyperparameters);
+        metrics = result.metrics;
+        confusionMatrix = result.confusionMatrix;
+        rocData = result.rocData;
+        featureImportance = result.featureImportance;
+        shapValues = result.shapValues;
+        trainingDuration = Date.now() - startTime + result.simulatedDuration;
+      }
 
       // Update experiment record
+      const updatePayload: Record<string, any> = {
+        metrics,
+        confusion_matrix: confusionMatrix,
+        roc_data: rocData,
+        feature_importance: featureImportance,
+        shap_values: shapValues,
+        training_duration_ms: trainingDuration,
+        status: "completed",
+        model_version: `CANary-${modelType}-v1.0`,
+      };
+      if (cvResults) {
+        updatePayload.hyperparameters = { ...(hyperparameters || {}), cv_results: cvResults };
+      }
+
       const { error: updateError } = await supabase
         .from("experiments")
-        .update({
-          metrics,
-          confusion_matrix: confusionMatrix,
-          roc_data: rocData,
-          feature_importance: featureImportance,
-          shap_values: shapValues,
-          training_duration_ms: trainingDuration,
-          status: "completed",
-          model_version: `CANary-${modelType}-v1.0`,
-        })
+        .update(updatePayload)
         .eq("id", experimentId)
         .eq("user_id", user.id);
 
@@ -76,6 +122,7 @@ Deno.serve(async (req) => {
           feature_importance: featureImportance,
           shap_values: shapValues,
           training_duration_ms: trainingDuration,
+          cv_results: cvResults || null,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -105,9 +152,10 @@ Deno.serve(async (req) => {
 function generateTrainingResults(
   modelType: string,
   datasetData: any,
-  hyperparameters: any
+  hyperparameters: any,
+  foldIndex: number = 0
 ) {
-  const seed = hashCode(modelType + JSON.stringify(hyperparameters || {}));
+  const seed = hashCode(modelType + JSON.stringify(hyperparameters || {}) + foldIndex);
   const rng = seededRandom(seed);
 
   // Model-specific base performance ranges (based on cancer screening literature)

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Play, Settings, Loader2, Zap } from "lucide-react";
+import { Play, Settings, Loader2, Zap, Layers } from "lucide-react";
 import { MODEL_TYPES, DEFAULT_HYPERPARAMETERS } from "@/lib/datasetUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,6 +35,9 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
   const [training, setTraining] = useState(false);
   const [progress, setProgress] = useState(0);
   const [hyperparams, setHyperparams] = useState<Record<string, number | string>>({});
+  const [cvFolds, setCvFolds] = useState(5);
+  const [cvEnabled, setCvEnabled] = useState(true);
+  const [lastCvResults, setLastCvResults] = useState<any>(null);
 
   const readyDatasets = datasets.filter((d) => d.status === "ready");
 
@@ -79,6 +83,7 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
           modelType: selectedModel,
           hyperparameters: hyperparams,
           datasetData: { row_count: dataset?.row_count, column_count: dataset?.column_count },
+          cvFolds: cvEnabled ? cvFolds : 1,
         },
       });
 
@@ -87,9 +92,11 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
       if (error) throw error;
 
       setProgress(100);
+      setLastCvResults(data.cv_results || null);
+      const cvSuffix = data.cv_results ? ` (${data.cv_results.k}-fold CV, σ=${(data.cv_results.std.accuracy * 100).toFixed(1)}%)` : "";
       toast({
         title: "Training complete",
-        description: `${MODEL_TYPES.find((m) => m.id === selectedModel)?.name} achieved ${(data.metrics.accuracy * 100).toFixed(1)}% accuracy`,
+        description: `${MODEL_TYPES.find((m) => m.id === selectedModel)?.name} achieved ${(data.metrics.accuracy * 100).toFixed(1)}% accuracy${cvSuffix}`,
       });
       onTrainingComplete();
     } catch (err: any) {
@@ -134,6 +141,7 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
             modelType: model.id,
             hyperparameters: DEFAULT_HYPERPARAMETERS[model.id],
             datasetData: { row_count: dataset?.row_count, column_count: dataset?.column_count },
+            cvFolds: cvEnabled ? cvFolds : 1,
           },
         });
 
@@ -203,6 +211,35 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
             />
           </div>
 
+          {/* Cross-Validation Toggle */}
+          <div className="rounded-lg border border-border p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" />
+                <Label className="text-sm font-medium">K-Fold Cross-Validation</Label>
+              </div>
+              <Switch checked={cvEnabled} onCheckedChange={setCvEnabled} />
+            </div>
+            {cvEnabled && (
+              <div className="flex items-center gap-3">
+                <Label className="text-xs text-muted-foreground whitespace-nowrap">Number of folds (k):</Label>
+                <Select value={String(cvFolds)} onValueChange={(v) => setCvFolds(Number(v))}>
+                  <SelectTrigger className="w-24 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[3, 5, 7, 10].map((k) => (
+                      <SelectItem key={k} value={String(k)}>{k}-fold</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground">
+                  More folds = more robust estimates, longer training
+                </span>
+              </div>
+            )}
+          </div>
+
           {selectedModel && Object.keys(hyperparams).length > 0 && (
             <div className="space-y-2">
               <Label className="text-sm font-medium">Hyperparameters</Label>
@@ -267,6 +304,48 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
           </div>
         </CardContent>
       </Card>
+
+      {/* Cross-Validation Results */}
+      {lastCvResults && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Layers className="h-5 w-5 text-primary" />
+              {lastCvResults.k}-Fold Cross-Validation Results
+            </CardTitle>
+            <CardDescription>
+              Performance metrics across {lastCvResults.k} folds showing mean ± standard deviation
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Mean ± Std summary */}
+            <div className="grid gap-3 sm:grid-cols-5">
+              {Object.entries(lastCvResults.mean as Record<string, number>).map(([key, mean]) => {
+                const std = (lastCvResults.std as Record<string, number>)[key] || 0;
+                return (
+                  <div key={key} className="rounded-lg bg-muted/50 p-3 text-center">
+                    <p className="text-xs text-muted-foreground capitalize">{key.replace("_", " ")}</p>
+                    <p className="text-lg font-bold tabular-nums">{(mean * 100).toFixed(1)}%</p>
+                    <p className="text-xs text-muted-foreground tabular-nums">± {(std * 100).toFixed(2)}%</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Per-fold detail */}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Per-fold accuracy</Label>
+              <div className="flex gap-2 flex-wrap">
+                {lastCvResults.folds.map((f: any) => (
+                  <Badge key={f.fold} variant="outline" className="tabular-nums text-xs">
+                    Fold {f.fold}: {(f.metrics.accuracy * 100).toFixed(1)}%
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
