@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Play, Settings, Loader2, Zap } from "lucide-react";
+import { Play, Settings, Loader2, Zap, Layers } from "lucide-react";
 import { MODEL_TYPES, DEFAULT_HYPERPARAMETERS } from "@/lib/datasetUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,6 +34,9 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
   const [training, setTraining] = useState(false);
   const [progress, setProgress] = useState(0);
   const [hyperparams, setHyperparams] = useState<Record<string, number | string>>({});
+  const [cvFolds, setCvFolds] = useState(5);
+  const [cvEnabled, setCvEnabled] = useState(true);
+  const [lastCvResults, setLastCvResults] = useState<any>(null);
 
   const readyDatasets = datasets.filter((d) => d.status === "ready");
 
@@ -79,6 +82,7 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
           modelType: selectedModel,
           hyperparameters: hyperparams,
           datasetData: { row_count: dataset?.row_count, column_count: dataset?.column_count },
+          cvFolds: cvEnabled ? cvFolds : 1,
         },
       });
 
@@ -87,9 +91,11 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
       if (error) throw error;
 
       setProgress(100);
+      setLastCvResults(data.cv_results || null);
+      const cvSuffix = data.cv_results ? ` (${data.cv_results.k}-fold CV, σ=${(data.cv_results.std.accuracy * 100).toFixed(1)}%)` : "";
       toast({
         title: "Training complete",
-        description: `${MODEL_TYPES.find((m) => m.id === selectedModel)?.name} achieved ${(data.metrics.accuracy * 100).toFixed(1)}% accuracy`,
+        description: `${MODEL_TYPES.find((m) => m.id === selectedModel)?.name} achieved ${(data.metrics.accuracy * 100).toFixed(1)}% accuracy${cvSuffix}`,
       });
       onTrainingComplete();
     } catch (err: any) {
@@ -134,6 +140,7 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
             modelType: model.id,
             hyperparameters: DEFAULT_HYPERPARAMETERS[model.id],
             datasetData: { row_count: dataset?.row_count, column_count: dataset?.column_count },
+            cvFolds: cvEnabled ? cvFolds : 1,
           },
         });
 
