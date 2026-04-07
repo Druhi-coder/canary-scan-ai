@@ -304,6 +304,48 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
           </div>
         </CardContent>
       </Card>
+
+      {/* Cross-Validation Results */}
+      {lastCvResults && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Layers className="h-5 w-5 text-primary" />
+              {lastCvResults.k}-Fold Cross-Validation Results
+            </CardTitle>
+            <CardDescription>
+              Performance metrics across {lastCvResults.k} folds showing mean ± standard deviation
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Mean ± Std summary */}
+            <div className="grid gap-3 sm:grid-cols-5">
+              {Object.entries(lastCvResults.mean as Record<string, number>).map(([key, mean]) => {
+                const std = (lastCvResults.std as Record<string, number>)[key] || 0;
+                return (
+                  <div key={key} className="rounded-lg bg-muted/50 p-3 text-center">
+                    <p className="text-xs text-muted-foreground capitalize">{key.replace("_", " ")}</p>
+                    <p className="text-lg font-bold tabular-nums">{(mean * 100).toFixed(1)}%</p>
+                    <p className="text-xs text-muted-foreground tabular-nums">± {(std * 100).toFixed(2)}%</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Per-fold detail */}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Per-fold accuracy</Label>
+              <div className="flex gap-2 flex-wrap">
+                {lastCvResults.folds.map((f: any) => (
+                  <Badge key={f.fold} variant="outline" className="tabular-nums text-xs">
+                    Fold {f.fold}: {(f.metrics.accuracy * 100).toFixed(1)}%
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
