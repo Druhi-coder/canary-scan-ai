@@ -4,8 +4,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ResponsiveContainer, Cell } from "recharts";
-import { Download, TrendingUp, BarChart3 } from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line,
+  ResponsiveContainer, Cell, ComposedChart, Scatter, ErrorBar,
+  Rectangle, ReferenceArea,
+} from "recharts";
+import { Download, TrendingUp, BarChart3, BoxSelect } from "lucide-react";
 
 interface Experiment {
   id: string;
