@@ -217,6 +217,103 @@ export default function ModelEvaluation({ experiments }: Props) {
         </Card>
       )}
 
+      {/* CV Variance Box Plot */}
+      {cvBoxPlotData && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <BoxSelect className="h-5 w-5 text-primary" />
+              Cross-Validation Variance
+            </CardTitle>
+            <CardDescription>
+              Per-fold metric distributions across models (box plot: min → Q1 → median → Q3 → max)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {cvBoxPlotData.map(({ metric, label, models }) => (
+              <div key={metric}>
+                <h4 className="text-sm font-semibold mb-3 text-foreground">{label}</h4>
+                <div className="space-y-2">
+                  {models.map((m) => {
+                    const rangeMin = Math.max(0, m.min - 0.02);
+                    const rangeMax = Math.min(1, m.max + 0.02);
+                    const scale = (v: number) => ((v - rangeMin) / (rangeMax - rangeMin)) * 100;
+
+                    return (
+                      <div key={m.model} className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground w-32 text-right shrink-0 truncate">
+                          {m.model}
+                        </span>
+                        <div className="relative flex-1 h-8">
+                          {/* Whisker line (min to max) */}
+                          <div
+                            className="absolute top-1/2 -translate-y-1/2 h-px bg-muted-foreground/50"
+                            style={{ left: `${scale(m.min)}%`, width: `${scale(m.max) - scale(m.min)}%` }}
+                          />
+                          {/* Min whisker cap */}
+                          <div
+                            className="absolute top-1/2 -translate-y-1/2 w-px h-3 bg-muted-foreground/50"
+                            style={{ left: `${scale(m.min)}%` }}
+                          />
+                          {/* Max whisker cap */}
+                          <div
+                            className="absolute top-1/2 -translate-y-1/2 w-px h-3 bg-muted-foreground/50"
+                            style={{ left: `${scale(m.max)}%` }}
+                          />
+                          {/* IQR box (Q1 to Q3) */}
+                          <div
+                            className="absolute top-1/2 -translate-y-1/2 h-5 rounded-sm bg-primary/20 border border-primary/40"
+                            style={{
+                              left: `${scale(m.q1)}%`,
+                              width: `${Math.max(1, scale(m.q3) - scale(m.q1))}%`,
+                            }}
+                          />
+                          {/* Median line */}
+                          <div
+                            className="absolute top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary"
+                            style={{ left: `${scale(m.median)}%` }}
+                          />
+                          {/* Mean dot */}
+                          <div
+                            className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-destructive border border-background"
+                            style={{ left: `${scale(m.mean)}%`, transform: "translate(-50%, -50%)" }}
+                          />
+                          {/* Individual fold points */}
+                          {m.foldValues.map((v, i) => (
+                            <div
+                              key={i}
+                              className="absolute top-1/2 w-1.5 h-1.5 rounded-full bg-foreground/30"
+                              style={{ left: `${scale(v)}%`, transform: "translate(-50%, -50%)" }}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs tabular-nums text-muted-foreground w-28 shrink-0">
+                          {(m.mean * 100).toFixed(1)}% ±{(m.std * 100).toFixed(1)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded-sm bg-primary/20 border border-primary/40 inline-block" /> IQR
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-0.5 h-3 bg-primary inline-block" /> Median
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-destructive inline-block" /> Mean
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-foreground/30 inline-block" /> Fold values
+                  </span>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* ROC Curve */}
       {selectedExp?.roc_data && (
         <Card>
