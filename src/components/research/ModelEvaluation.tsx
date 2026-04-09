@@ -69,6 +69,39 @@ export default function ModelEvaluation({ experiments }: Props) {
     }));
   }, [completed]);
 
+  // Build per-fold box plot data for CV experiments
+  const cvBoxPlotData = useMemo(() => {
+    const withCv = completed.filter((e) => e.hyperparameters?.cv_results?.folds);
+    if (withCv.length === 0) return null;
+
+    const metricKeys = Object.keys(METRIC_LABELS) as string[];
+    // For each metric, build one entry per model with min/q1/median/q3/max
+    return metricKeys.map((metric) => {
+      const models = withCv.map((exp) => {
+        const folds: { metrics: Record<string, number> }[] = exp.hyperparameters.cv_results.folds;
+        const values = folds.map((f) => (f.metrics as any)[metric] as number).sort((a, b) => a - b);
+        const q = (p: number) => {
+          const idx = p * (values.length - 1);
+          const lo = Math.floor(idx);
+          const hi = Math.ceil(idx);
+          return lo === hi ? values[lo] : values[lo] * (hi - idx) + values[hi] * (idx - lo);
+        };
+        return {
+          model: MODEL_NAMES[exp.model_type] || exp.model_type,
+          min: values[0],
+          q1: q(0.25),
+          median: q(0.5),
+          q3: q(0.75),
+          max: values[values.length - 1],
+          mean: exp.hyperparameters.cv_results.mean[metric],
+          std: exp.hyperparameters.cv_results.std[metric],
+          foldValues: values,
+        };
+      });
+      return { metric, label: METRIC_LABELS[metric], models };
+    });
+  }, [completed]);
+
   // Selected experiment for detailed view (most recent)
   const selectedExp = completed[0];
 
