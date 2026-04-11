@@ -52,22 +52,27 @@ export default function ExperimentTracker({ experiments, datasets, onRefresh }: 
   };
 
   const exportLog = () => {
-    const log = experiments.map((e) => ({
-      name: e.name,
-      model: MODEL_NAMES[e.model_type] || e.model_type,
-      version: e.model_version || "—",
-      dataset: datasets.find((d) => d.id === e.dataset_id)?.name || "—",
-      hyperparameters: JSON.stringify(e.hyperparameters),
-      accuracy: e.metrics?.accuracy?.toFixed(4) || "—",
-      precision: e.metrics?.precision?.toFixed(4) || "—",
-      recall: e.metrics?.recall?.toFixed(4) || "—",
-      f1_score: e.metrics?.f1_score?.toFixed(4) || "—",
-      roc_auc: e.metrics?.roc_auc?.toFixed(4) || "—",
-      training_time_ms: e.training_duration_ms || "—",
-      status: e.status,
-      date: e.created_at,
-    }));
-    const csv = [Object.keys(log[0] || {}).join(","), ...log.map((r) => Object.values(r).join(","))].join("\n");
+    if (experiments.length === 0) return;
+    const headers = [
+      "name", "model", "version", "dataset", "accuracy", "precision",
+      "recall", "f1_score", "roc_auc", "training_time_ms", "status", "date", "notes"
+    ];
+    const rows = experiments.map((e) => [
+      `"${e.name}"`,
+      MODEL_NAMES[e.model_type] || e.model_type,
+      e.model_version || "",
+      `"${datasets.find((d) => d.id === e.dataset_id)?.name || ""}"`,
+      e.metrics?.accuracy?.toFixed(4) || "",
+      e.metrics?.precision?.toFixed(4) || "",
+      e.metrics?.recall?.toFixed(4) || "",
+      e.metrics?.f1_score?.toFixed(4) || "",
+      e.metrics?.roc_auc?.toFixed(4) || "",
+      e.training_duration_ms || "",
+      e.status,
+      e.created_at,
+      `"${(e as any).notes || ""}"`,
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

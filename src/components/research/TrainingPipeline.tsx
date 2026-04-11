@@ -19,6 +19,9 @@ interface Dataset {
   row_count: number;
   column_count: number;
   status: string;
+  schema_info: any;
+  sample_data: any;
+  source: string;
 }
 
 interface Props {
@@ -82,7 +85,13 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
           datasetId: selectedDataset,
           modelType: selectedModel,
           hyperparameters: hyperparams,
-          datasetData: { row_count: dataset?.row_count, column_count: dataset?.column_count },
+          datasetData: {
+            row_count: dataset?.row_count,
+            column_count: dataset?.column_count,
+            sample_data: dataset?.sample_data,
+            column_mapping: dataset?.schema_info?.column_mapping,
+            source: dataset?.source,
+          },
           cvFolds: cvEnabled ? cvFolds : 1,
         },
       });
@@ -140,7 +149,13 @@ export default function TrainingPipeline({ datasets, onTrainingComplete }: Props
             datasetId: selectedDataset,
             modelType: model.id,
             hyperparameters: DEFAULT_HYPERPARAMETERS[model.id],
-            datasetData: { row_count: dataset?.row_count, column_count: dataset?.column_count },
+            datasetData: {
+              row_count: dataset?.row_count,
+              column_count: dataset?.column_count,
+              sample_data: dataset?.sample_data,
+              column_mapping: dataset?.schema_info?.column_mapping,
+              source: dataset?.source,
+            },
             cvFolds: cvEnabled ? cvFolds : 1,
           },
         });
