@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Upload, Database, AlertTriangle, CheckCircle, Trash2, FileSpreadsheet } from "lucide-react";
+import { Upload, Database, AlertTriangle, CheckCircle, Trash2, FileSpreadsheet, Columns } from "lucide-react";
 import { parseCSV, validateDataset, type DatasetValidationResult } from "@/lib/datasetUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import ColumnMappingDialog, { type ColumnMapping } from "./ColumnMappingDialog";
 
 interface Dataset {
   id: string;
@@ -32,6 +33,15 @@ export default function DatasetManager({ datasets, onRefresh }: Props) {
   const [uploading, setUploading] = useState(false);
   const [validation, setValidation] = useState<DatasetValidationResult | null>(null);
 
+  // Column mapping state
+  const [mappingOpen, setMappingOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<{
+    name: string;
+    rows: Record<string, string>[];
+    columns: string[];
+    validation: DatasetValidationResult;
+  } | null>(null);
+
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -43,33 +53,63 @@ export default function DatasetManager({ datasets, onRefresh }: Props) {
       const result = validateDataset(rows);
       setValidation(result);
 
-      if (result.errors.length > 20) {
-        toast({ title: "Too many validation errors", description: "Please fix the dataset and try again.", variant: "destructive" });
+      if (rows.length === 0) {
+        toast({ title: "Empty dataset", description: "The CSV file has no data rows.", variant: "destructive" });
         return;
       }
 
-      const sampleData = rows.slice(0, 5);
+      const columns = Object.keys(rows[0]);
+      setPendingFile({
+        name: file.name.replace(/\.csv$/i, ""),
+        rows,
+        columns,
+        validation: result,
+      });
+      setMappingOpen(true);
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      // Reset file input
+      e.target.value = "";
+    }
+  }, [user, toast]);
 
+  const handleMappingConfirm = useCallback(async (mapping: ColumnMapping) => {
+    if (!pendingFile || !user) return;
+    setMappingOpen(false);
+    setUploading(true);
+
+    try {
+      const { rows, name, validation: result } = pendingFile;
+
+      // Store mapping + raw data (up to 2000 rows) in the dataset record
       const { error } = await supabase.from("datasets").insert({
         user_id: user.id,
-        name: file.name.replace(/\.csv$/i, ""),
+        name,
         source: "upload",
         row_count: result.rowCount,
         column_count: result.columnCount,
-        schema_info: result.schema as any,
-        sample_data: sampleData as any,
+        schema_info: { ...result.schema, column_mapping: mapping } as any,
+        sample_data: rows.slice(0, 2000) as any,
         status: result.valid ? "ready" : "needs_review",
       } as any);
 
       if (error) throw error;
-      toast({ title: "Dataset uploaded", description: `${result.rowCount} rows, ${result.columnCount} columns` });
+
+      const mappedCount = Object.keys(mapping).length;
+      toast({
+        title: "Dataset uploaded with column mapping",
+        description: `${result.rowCount} rows, ${mappedCount} features mapped`,
+      });
       onRefresh();
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     } finally {
       setUploading(false);
+      setPendingFile(null);
     }
-  }, [user, toast, onRefresh]);
+  }, [pendingFile, user, toast, onRefresh]);
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("datasets").delete().eq("id", id);
@@ -112,6 +152,8 @@ export default function DatasetManager({ datasets, onRefresh }: Props) {
     }
   };
 
+  const hasMapping = (ds: Dataset) => !!(ds.schema_info as any)?.column_mapping;
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
@@ -120,7 +162,7 @@ export default function DatasetManager({ datasets, onRefresh }: Props) {
             <CardTitle className="text-lg flex items-center gap-2">
               <Upload className="h-5 w-5 text-primary" /> Upload Dataset
             </CardTitle>
-            <CardDescription>Import CSV files from Kaggle, UCI, or custom sources</CardDescription>
+            <CardDescription>Import CSV files from Kaggle, UCI, or custom biomedical sources. You'll map columns to CANary features after upload.</CardDescription>
           </CardHeader>
           <CardContent>
             <Input
@@ -131,7 +173,7 @@ export default function DatasetManager({ datasets, onRefresh }: Props) {
               className="cursor-pointer"
             />
             <p className="text-xs text-muted-foreground mt-2">
-              Supported: Kaggle cancer datasets, UCI ML Repository, custom CSVs
+              Supports any CSV with numeric/categorical features and a binary target label.
             </p>
           </CardContent>
         </Card>
@@ -196,6 +238,7 @@ export default function DatasetManager({ datasets, onRefresh }: Props) {
                   <TableHead>Source</TableHead>
                   <TableHead>Rows</TableHead>
                   <TableHead>Columns</TableHead>
+                  <TableHead>Mapping</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -209,6 +252,15 @@ export default function DatasetManager({ datasets, onRefresh }: Props) {
                     </TableCell>
                     <TableCell className="tabular-nums">{ds.row_count?.toLocaleString()}</TableCell>
                     <TableCell className="tabular-nums">{ds.column_count}</TableCell>
+                    <TableCell>
+                      {hasMapping(ds) ? (
+                        <Badge variant="default" className="gap-1 text-xs">
+                          <Columns className="h-3 w-3" /> Mapped
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">Auto</Badge>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={ds.status === "ready" ? "default" : "secondary"}>
                         {ds.status}
@@ -226,6 +278,20 @@ export default function DatasetManager({ datasets, onRefresh }: Props) {
           )}
         </CardContent>
       </Card>
+
+      {/* Column Mapping Dialog */}
+      {pendingFile && (
+        <ColumnMappingDialog
+          open={mappingOpen}
+          onOpenChange={(open) => {
+            setMappingOpen(open);
+            if (!open) setPendingFile(null);
+          }}
+          csvColumns={pendingFile.columns}
+          sampleRows={pendingFile.rows}
+          onConfirm={handleMappingConfirm}
+        />
+      )}
     </div>
   );
 }
