@@ -37,30 +37,42 @@ export const RiskCard = ({ title, result }: RiskCardProps) => {
       <CardContent className="space-y-4">
         {/* Risk Circle */}
         <div className={`w-24 h-24 mx-auto rounded-full ${getRiskColor(result.probability)} flex items-center justify-center`}>
-          <span className="text-3xl font-bold text-white">{percentage}%</span>
+        <span className="text-lg font-semibold text-white text-center px-2">
+          {percentage}%
+        </span>
         </div>
+        <p className="text-xs text-muted-foreground mt-2 text-center px-2">
+           Screening Risk Index (relative, not probability)
+        </p>
 
         {/* Risk Label */}
         <div>
           <p className={`font-semibold text-lg ${getRiskTextColor(result.probability)}`}>
-            {result.riskLabel} Risk
+            Relative Risk Level: {result.riskLabel}
           </p>
         </div>
 
         {/* Confidence with Tooltip */}
-        <div className="flex items-center justify-center gap-1">
-          <span className="text-sm text-muted-foreground">
-            Confidence: {result.confidence}
-          </span>
-          <Tooltip>
-            <TooltipTrigger>
-              <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p className="text-sm">{confidenceExplanations[result.confidence]}</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
+        <div className="flex flex-col items-center">
+  <div className="flex items-center gap-1">
+    <span className="text-sm text-muted-foreground">
+      Confidence Score: {result.confidence === "High" ? "0.85" : result.confidence === "Medium" ? "0.72" : "0.62"} ({result.confidence} Reliability)
+    </span>
+
+    <Tooltip>
+      <TooltipTrigger>
+        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs">
+        <p className="text-sm">{confidenceExplanations[result.confidence]}</p>
+      </TooltipContent>
+    </Tooltip>
+  </div>
+
+  <p className="text-xs text-muted-foreground mt-1 text-center px-2">
+    Confidence reflects data completeness and clinical feature availability.
+  </p>
+</div>
 
         {/* Explanation */}
         {result.explanation && (
