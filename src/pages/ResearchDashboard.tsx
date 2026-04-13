@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Database, Play, BarChart3, Brain, FlaskConical, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Database, Play, BarChart3, Brain, FlaskConical, AlertTriangle, Award } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import DatasetManager from "@/components/research/DatasetManager";
@@ -11,6 +11,7 @@ import TrainingPipeline from "@/components/research/TrainingPipeline";
 import ModelEvaluation from "@/components/research/ModelEvaluation";
 import ExplainableAI from "@/components/research/ExplainableAI";
 import ExperimentTracker from "@/components/research/ExperimentTracker";
+import ValidationStudy from "@/components/research/ValidationStudy";
 
 export default function ResearchDashboard() {
   const navigate = useNavigate();
@@ -69,8 +70,12 @@ export default function ResearchDashboard() {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="datasets" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs defaultValue="validation" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="validation" className="gap-1.5 text-xs sm:text-sm">
+              <Award className="h-4 w-4" />
+              <span className="hidden sm:inline">Validation</span>
+            </TabsTrigger>
             <TabsTrigger value="datasets" className="gap-1.5 text-xs sm:text-sm">
               <Database className="h-4 w-4" />
               <span className="hidden sm:inline">Datasets</span>
@@ -92,6 +97,11 @@ export default function ResearchDashboard() {
               <span className="hidden sm:inline">Experiments</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Validation Study — first tab, always populated */}
+          <TabsContent value="validation">
+            <ValidationStudy />
+          </TabsContent>
 
           <TabsContent value="datasets">
             <DatasetManager datasets={datasets} onRefresh={fetchData} />
