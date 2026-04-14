@@ -31,3 +31,9 @@ CANary is an AI-assisted screening system designed to estimate early-stage cance
 - Not a diagnostic system
 - Based on synthetic and literature-derived calibration
 - Requires clinical validation with real-world datasets
+
+## Future Improvements
+- Integration with real clinical datasets
+- Model validation against hospital data
+- AI-assisted prediction models (ML-based)
+- Deployment as a clinical decision support tool
