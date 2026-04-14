@@ -12,7 +12,16 @@ import { DebugPanel } from "@/components/DebugPanel";
 import { downloadReport, convertToExportable } from "@/lib/reportExport";
 import { CancerRiskResult, RiskFactor, DebugData } from "@/lib/predictionEngine";
 import { getAllCitations, formatCitation } from "@/lib/citations";
+// CANary Results Processing Module
+// Handles visualization, interpretation, and reporting of risk outputs
+// Author: Druhi
 
+// Core logic: transforms raw model outputs into user-facing clinical insights
+
+const Results = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const report = location.state?.report as TestResult | undefined;
 const Results = () => {
   const location = useLocation();
   const navigate = useNavigate();
