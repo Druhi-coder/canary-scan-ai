@@ -52,6 +52,14 @@ const Auth = () => {
   },
 });
 
+const { data, error } = await supabase.auth.signUp({
+  email: validated.email,
+  password: validated.password,
+  options: {
+    emailRedirectTo: redirectUrl,
+  },
+});
+
 if (error) {
   if (error.message.includes("already registered")) {
     toast.error("This email is already registered. Please sign in instead.");
@@ -59,14 +67,21 @@ if (error) {
     toast.error(error.message);
   }
 } else {
-  // 🔥 THIS IS THE MISSING PART
   if (data?.user) {
-    await supabase.from("profiles").insert([
-      {
-        id: data.user.id,
-        email: data.user.email,
-      },
-    ]);
+    const { error: insertError } = await supabase
+      .from("profiles")
+      .insert([
+        {
+          id: data.user.id,
+          email: data.user.email,
+        },
+      ]);
+
+    if (insertError) {
+      console.error("INSERT ERROR:", insertError);
+      toast.error("Profile creation failed");
+      return;
+    }
   }
 
   toast.success("Account created successfully!");
