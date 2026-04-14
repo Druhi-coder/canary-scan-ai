@@ -10,8 +10,7 @@
 - Database linter found only one minor issue: leaked password protection is disabled (cosmetic, not blocking)
 
 ### Blocker: Authentication Required
-To test the full flow, **you need to log in from the preview window first**. I cannot fill in credentials on your behalf without your approval.
-
+To test the full flow, **you need to log in from the preview window first**. Note: Authentication is required to test the full flow. Please log in using a valid account before proceeding.
 ## Test Plan (Once Logged In)
 
 ### Step 1: Navigate to Start Test
@@ -36,6 +35,8 @@ To test the full flow, **you need to log in from the preview window first**. I c
 - Check assessment saved to database (via My Reports page)
 - Confirm report can be viewed again after navigation
 
-## Action Needed
-**Please log in to the app in the preview window** (use Sign Up if you don't have an account, or use an existing account), then ask me to proceed with the test.
+## Prerequisites
+Authentication is required to test the full flow.
+
+ Ensure you are logged in before executing the test plan.
 
