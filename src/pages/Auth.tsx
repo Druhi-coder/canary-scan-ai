@@ -37,19 +37,58 @@ const Auth = () => {
   }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const validated = authSchema.parse({ email, password });
-      const redirectUrl = `${window.location.origin}/`;
+  try {
+    const validated = authSchema.parse({ email, password });
+    const redirectUrl = `${window.location.origin}/`;
 
-      const { data, error } = await supabase.auth.signUp({
-  email: validated.email,
-  password: validated.password,
-  options: {
-    emailRedirectTo: redirectUrl,
-  },
+    const { data, error } = await supabase.auth.signUp({
+      email: validated.email,
+      password: validated.password,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    });
+
+    if (error) {
+      if (error.message.includes("already registered")) {
+        toast.error("This email is already registered. Please sign in instead.");
+      } else {
+        toast.error(error.message);
+      }
+      return;
+    }
+
+    if (data?.user) {
+      const { error: insertError } = await supabase
+        .from("profiles")
+        .insert([
+          {
+            id: data.user.id,
+            email: data.user.email,
+          },
+        ]);
+
+      if (insertError) {
+        console.error("INSERT ERROR:", insertError);
+        toast.error("Profile creation failed");
+        return;
+      }
+    }
+
+    toast.success("Account created successfully!");
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      toast.error(error.errors[0].message);
+    } else {
+      toast.error("An error occurred during sign up");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 });
 
 const { data, error } = await supabase.auth.signUp({
