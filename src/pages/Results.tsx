@@ -17,11 +17,6 @@ import { getAllCitations, formatCitation } from "@/lib/citations";
 // Author: Druhi
 
 // Core logic: transforms raw model outputs into user-facing clinical insights
-
-const Results = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const report = location.state?.report as TestResult | undefined;
 const Results = () => {
   const location = useLocation();
   const navigate = useNavigate();
