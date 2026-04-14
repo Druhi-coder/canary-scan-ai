@@ -1,73 +1,52 @@
-# Welcome to your Lovable project
+# CANary — Early Cancer Risk Screening System
 
-## Project info
+## Overview
+CANary is an AI-assisted screening system designed to estimate early-stage cancer risk using explainable, literature-calibrated models.
 
-**URL**: https://lovable.dev/projects/e2396ef2-9d97-4175-be85-e016f63bedc1
+The system analyzes demographic, behavioral, and clinical inputs to generate risk scores for multiple cancer types.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## Key Features
+- Multi-cancer risk estimation (Pancreatic, Colon, Blood)
+- Explainable risk factors and interpretation
+- Confidence scoring based on data completeness
+- Interactive visualization (charts + comparative risk)
+- Secure report storage using Supabase (RLS)
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e2396ef2-9d97-4175-be85-e016f63bedc1) and start prompting.
+## System Architecture
+The system consists of:
 
-Changes made via Lovable will be committed automatically to this repo.
+1. Input Layer — User health and lifestyle data  
+2. Risk Engine — Literature-calibrated scoring (RR, OR models)  
+3. Interpretation Layer — Risk categorization + explanations  
+4. Visualization Layer — UI with charts and insights  
+5. Data Layer — Secure storage via Supabase  
 
-**Use your preferred IDE**
+Detailed architecture: see `/docs/ARCHITECTURE.md`
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
+## Tech Stack
+- React + TypeScript
 - Tailwind CSS
+- Supabase (Database + Auth)
+- Vercel (Deployment)
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/e2396ef2-9d97-4175-be85-e016f63bedc1) and click on Share -> Publish.
+## Disclaimer
+CANary is a screening tool and **not a diagnostic system**.  
+It is based on literature-derived and synthetic calibration and requires clinical validation.
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+## Live Demo
+https://canary-scan-ai.vercel.app
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Author
+Druhi
