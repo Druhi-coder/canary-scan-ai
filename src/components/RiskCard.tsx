@@ -18,13 +18,13 @@ const confidenceExplanations = {
 };
 
 export const RiskCard = ({ title, result }: RiskCardProps) => {
-  const getRiskColor = (prob: number) => {
+  const getClinicalRiskColor = (prob: number) => {
     if (prob < 0.3) return 'bg-success-green';
     if (prob < 0.6) return 'bg-warning-yellow';
     return 'bg-danger-red';
   };
 
-  const getRiskTextColor = (prob: number) => {
+  const getClinicalRiskTextColor = (prob: number) => {
     if (prob < 0.3) return 'text-success-green';
     if (prob < 0.6) return 'text-warning-yellow';
     return 'text-danger-red';
@@ -39,7 +39,7 @@ export const RiskCard = ({ title, result }: RiskCardProps) => {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Risk Circle */}
-        <div className={`w-24 h-24 mx-auto rounded-full ${getRiskColor(result.probability)} flex items-center justify-center`}>
+        <div className={`w-24 h-24 mx-auto rounded-full ${getClinicalRiskColor(result.probability)} flex items-center justify-center`}>
         <span className="text-lg font-semibold text-white text-center px-2">
           {percentage}%
         </span>
@@ -50,7 +50,7 @@ export const RiskCard = ({ title, result }: RiskCardProps) => {
 
         {/* Risk Label */}
         <div>
-          <p className={`font-semibold text-lg ${getRiskTextColor(result.probability)}`}>
+          <p className={`font-semibold text-lg ${getClinicalRiskTextColor(result.probability)}`}>
             Relative Risk Level: {result.riskLabel}
           </p>
         </div>
