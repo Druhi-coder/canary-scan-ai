@@ -44,13 +44,33 @@ const Auth = () => {
       const validated = authSchema.parse({ email, password });
       const redirectUrl = `${window.location.origin}/`;
 
-      const { error } = await supabase.auth.signUp({
-        email: validated.email,
-        password: validated.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-        },
-      });
+      const { data, error } = await supabase.auth.signUp({
+  email: validated.email,
+  password: validated.password,
+  options: {
+    emailRedirectTo: redirectUrl,
+  },
+});
+
+if (error) {
+  if (error.message.includes("already registered")) {
+    toast.error("This email is already registered. Please sign in instead.");
+  } else {
+    toast.error(error.message);
+  }
+} else {
+  // 🔥 THIS IS THE MISSING PART
+  if (data?.user) {
+    await supabase.from("profiles").insert([
+      {
+        id: data.user.id,
+        email: data.user.email,
+      },
+    ]);
+  }
+
+  toast.success("Account created successfully!");
+}
 
       if (error) {
         if (error.message.includes("already registered")) {
