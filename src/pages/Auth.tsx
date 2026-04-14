@@ -59,23 +59,6 @@ const Auth = () => {
       }
 
       // ✅ Insert into profiles table
-      if (data?.user) {
-        const { error: insertError } = await supabase
-          .from("profiles")
-          .insert([
-            {
-              id: data.user.id,
-              email: data.user.email,
-            },
-          ]);
-
-        if (insertError) {
-          console.error("INSERT ERROR:", insertError);
-          toast.error("Profile creation failed");
-          return;
-        }
-      }
-
       toast.success("Account created successfully!");
     } catch (error) {
       if (error instanceof z.ZodError) {
