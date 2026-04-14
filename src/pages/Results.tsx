@@ -129,8 +129,7 @@ const Results = () => {
 <p className="text-sm text-muted-foreground mt-2">
   CANary v3.0 | Validated on synthetic dataset (N=600) | Research Use Only
 </p>
-
-<p className="test-sm text-muted-foreground">
+<p className="text-sm text-muted-foreground">
             Analysis completed on {new Date(report.date).toLocaleDateString()} at {new Date(report.date).toLocaleTimeString()}
           </p>
         </div>
