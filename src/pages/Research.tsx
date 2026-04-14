@@ -1,3 +1,6 @@
+// CANary Results Processing Module
+// Handles visualization, interpretation, and reporting of risk outputs
+// Author: Druhi
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
