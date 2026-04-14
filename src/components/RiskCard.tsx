@@ -1,3 +1,6 @@
+// CANary Risk Assessment Component
+// Developed for early-stage cancer screening using literature-calibrated models
+// Author: Druhi
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { HelpCircle } from 'lucide-react';
