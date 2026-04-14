@@ -58,7 +58,6 @@ const Auth = () => {
         return;
       }
 
-      // ✅ Insert into profiles table
       toast.success("Account created successfully!");
     } catch (error) {
       if (error instanceof z.ZodError) {
