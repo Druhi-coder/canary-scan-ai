@@ -21,125 +21,65 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate("/");
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      if (session) navigate("/");
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/");
-      }
+      if (session) navigate("/");
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // ✅ SIGN UP
   const handleSignUp = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const validated = authSchema.parse({ email, password });
-    const redirectUrl = `${window.location.origin}/`;
+    try {
+      const validated = authSchema.parse({ email, password });
+      const redirectUrl = `${window.location.origin}/`;
 
-    const { data, error } = await supabase.auth.signUp({
-      email: validated.email,
-      password: validated.password,
-      options: {
-        emailRedirectTo: redirectUrl,
-      },
-    });
-
-    if (error) {
-      if (error.message.includes("already registered")) {
-        toast.error("This email is already registered. Please sign in instead.");
-      } else {
-        toast.error(error.message);
-      }
-      return;
-    }
-
-    if (data?.user) {
-      const { error: insertError } = await supabase
-        .from("profiles")
-        .insert([
-          {
-            id: data.user.id,
-            email: data.user.email,
-          },
-        ]);
-
-      if (insertError) {
-        console.error("INSERT ERROR:", insertError);
-        toast.error("Profile creation failed");
-        return;
-      }
-    }
-
-    toast.success("Account created successfully!");
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      toast.error(error.errors[0].message);
-    } else {
-      toast.error("An error occurred during sign up");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-});
-
-const { data, error } = await supabase.auth.signUp({
-  email: validated.email,
-  password: validated.password,
-  options: {
-    emailRedirectTo: redirectUrl,
-  },
-});
-
-if (error) {
-  if (error.message.includes("already registered")) {
-    toast.error("This email is already registered. Please sign in instead.");
-  } else {
-    toast.error(error.message);
-  }
-} else {
-  if (data?.user) {
-    const { error: insertError } = await supabase
-      .from("profiles")
-      .insert([
-        {
-          id: data.user.id,
-          email: data.user.email,
+      const { data, error } = await supabase.auth.signUp({
+        email: validated.email,
+        password: validated.password,
+        options: {
+          emailRedirectTo: redirectUrl,
         },
-      ]);
-
-    if (insertError) {
-      console.error("INSERT ERROR:", insertError);
-      toast.error("Profile creation failed");
-      return;
-    }
-  }
-
-  toast.success("Account created successfully!");
-}
+      });
 
       if (error) {
         if (error.message.includes("already registered")) {
-          toast.error("This email is already registered. Please sign in instead.");
+          toast.error("This email is already registered. Please sign in.");
         } else {
           toast.error(error.message);
         }
-      } else {
-        toast.success("Account created successfully!");
+        return;
       }
+
+      // ✅ Insert into profiles table
+      if (data?.user) {
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert([
+            {
+              id: data.user.id,
+              email: data.user.email,
+            },
+          ]);
+
+        if (insertError) {
+          console.error("INSERT ERROR:", insertError);
+          toast.error("Profile creation failed");
+          return;
+        }
+      }
+
+      toast.success("Account created successfully!");
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
-      } else if (error instanceof Error && (error.message.includes("Load failed") || error.message.includes("fetch"))) {
-        toast.error("Network error. Please check your connection and try again.");
       } else {
         toast.error("An error occurred during sign up");
       }
@@ -148,12 +88,14 @@ if (error) {
     }
   };
 
+  // ✅ MAGIC LINK
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       const validated = z.string().trim().email().max(255).parse(email);
+
       const { error } = await supabase.auth.signInWithOtp({
         email: validated,
         options: {
@@ -164,21 +106,16 @@ if (error) {
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success("Magic link sent! Check your email inbox.");
+        toast.success("Magic link sent! Check your email.");
       }
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast.error("Please enter a valid email address.");
-      } else if (error instanceof Error && (error.message.includes("Load failed") || error.message.includes("fetch"))) {
-        toast.error("Network error. Please check your connection and try again.");
-      } else {
-        toast.error("An error occurred sending the magic link.");
-      }
+      toast.error("Invalid email or network error");
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ SIGN IN
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -193,7 +130,7 @@ if (error) {
 
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
-          toast.error("Invalid email or password. Please try again.");
+          toast.error("Invalid email or password.");
         } else {
           toast.error(error.message);
         }
@@ -203,8 +140,6 @@ if (error) {
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
-      } else if (error instanceof Error && (error.message.includes("Load failed") || error.message.includes("fetch"))) {
-        toast.error("Network error. Please check your connection and try again.");
       } else {
         toast.error("An error occurred during sign in");
       }
@@ -218,8 +153,9 @@ if (error) {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Welcome to CANary</CardTitle>
-          <CardDescription>Sign in to your account or create a new one</CardDescription>
+          <CardDescription>Sign in or create an account</CardDescription>
         </CardHeader>
+
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
@@ -228,92 +164,32 @@ if (error) {
               <TabsTrigger value="magic">Magic Link</TabsTrigger>
             </TabsList>
 
+            {/* SIGN IN */}
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign In"}
-                </Button>
+                <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <Button type="submit" className="w-full">{loading ? "Signing in..." : "Sign In"}</Button>
               </form>
             </TabsContent>
 
+            {/* SIGN UP */}
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Creating account..." : "Sign Up"}
-                </Button>
+                <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <Button type="submit" className="w-full">{loading ? "Creating..." : "Sign Up"}</Button>
               </form>
             </TabsContent>
 
+            {/* MAGIC LINK */}
             <TabsContent value="magic">
               <form onSubmit={handleMagicLink} className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Enter your email and we'll send you a login link — no password needed.
-                </p>
-                <div className="space-y-2">
-                  <Label htmlFor="magic-email">Email</Label>
-                  <Input
-                    id="magic-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Sending link..." : "Send Magic Link"}
-                </Button>
+                <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Button type="submit" className="w-full">{loading ? "Sending..." : "Send Magic Link"}</Button>
               </form>
             </TabsContent>
+
           </Tabs>
         </CardContent>
       </Card>
