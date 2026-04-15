@@ -193,6 +193,40 @@ const Results = () => {
             result={getCancerResult('blood')}
           />
         </div>
+        <div className="text-sm text-muted-foreground mb-8 text-center">
+  Confidence indicates how reliable the prediction is based on available data, model agreement, and input completeness.
+</div>
+        <div className="mb-8">
+  <h2 className="text-xl font-semibold mb-4">Risk Levels</h2>
+
+  {[
+    { label: "Pancreatic", value: predictions.pancreatic.probability },
+    { label: "Colon", value: predictions.colon.probability },
+    { label: "Blood", value: predictions.blood.probability },
+  ].map((item) => {
+    const percentage = (item.value * 100).toFixed(1);
+
+    let color = "bg-green-500";
+    if (item.value >= 0.6) color = "bg-red-500";
+    else if (item.value >= 0.3) color = "bg-yellow-500";
+
+    return (
+      <div key={item.label} className="mb-3">
+        <div className="flex justify-between text-sm mb-1">
+          <span>{item.label}</span>
+          <span>{percentage}%</span>
+        </div>
+
+        <div className="w-full bg-muted rounded-full h-3">
+          <div
+            className={`${color} h-3 rounded-full`}
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+      </div>
+    );
+  })}
+</div>
 
         {/* Risk Distribution Visualization */}
         <Card className="mb-8">
