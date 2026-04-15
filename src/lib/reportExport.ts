@@ -240,14 +240,29 @@ export const convertToExportable = (report: TestResult): ExportableReport => {
 /**
  * Generates a text report for download
  */
-export const generateTextReport = (report: TestResult): string => {
+  export const generateTextReport = (report: TestResult): string => {
   const exportable = convertToExportable(report);
+  const p = exportable.riskAssessment;
+
+  const maxRisk = Math.max(
+  p.pancreatic.probability,
+  p.colon.probability,
+  p.blood.probability
+);
+
+let finalVerdict = "LOW RISK";
+if (maxRisk >= 0.6) finalVerdict = "HIGH RISK";
+else if (maxRisk >= 0.3) finalVerdict = "MODERATE RISK";
   const divider = '═'.repeat(60);
   const subDivider = '─'.repeat(40);
 
   let content = `
 ${divider}
                     CANary CANCER RISK SCREENING REPORT
+${divider}
+
+FINAL VERDICT: ${finalVerdict}
+
 ${divider}
 
 Report ID: ${exportable.metadata.reportId}
