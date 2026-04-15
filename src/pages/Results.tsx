@@ -1,3 +1,4 @@
+import { downloadPDFReport } from "@/lib/reportExport";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -474,6 +475,14 @@ const Results = () => {
               <Button variant="outline" onClick={handleDownloadText} className="gap-2">
                 <FileText className="h-4 w-4" />
                 Download Text Report
+              </Button>
+              <Button 
+               variant="outline" 
+               onClick={() => downloadPDFReport(report)} 
+               className="gap-2"
+              >
+              <FileText className="h-4 w-4" />
+                Download PDF Report
               </Button>
               <Button variant="outline" onClick={handleDownloadJSON} className="gap-2">
                 <FileJson className="h-4 w-4" />
