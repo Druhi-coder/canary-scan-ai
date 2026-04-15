@@ -231,12 +231,21 @@ useEffect(() => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.age || !formData.gender) {
+    toast({
+      variant: "destructive",
+      title: "Incomplete Form",
+      description: "Please fill required fields before running analysis.",
+    });
+    return;
+  }
     
     if (!validateForm()) {
       toast({
         variant: "destructive",
         title: "Validation Error",
-        description: "Please fix the errors in the form.",
+        description: "Please fill all required fields correctly.",
       });
       return;
     }
@@ -1100,13 +1109,18 @@ try {
           </Card>
 
           <div className="flex justify-center">
+            {loading && (
+             <div className="text-center text-sm text-muted-foreground mb-4">
+              Processing your data, running AI models, and generating report...
+          </div>
+       )}
             <Button 
               type="submit" 
               size="lg" 
               className="px-12"
               disabled={loading || !consentGiven}
             >
-              {loading ? "Analyzing..." : "Run CANary Scan"}
+             {loading ? "Running AI Analysis..." : "Run CANary Scan"}
             </Button>
           </div>
         </form>
