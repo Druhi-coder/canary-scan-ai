@@ -1,20 +1,20 @@
-import { generateAIExplanation } from "../lib/ai";
-import { downloadPDFReport } from "../lib/reportExport";
+import { generateAIExplanation } from "@/lib/ai";
+import { downloadPDFReport } from "@/lib/reportExport";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Alert, AlertDescription } from "../components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { QRCodeSVG } from "qrcode.react";
 import { ArrowLeft, Download, Share2, AlertCircle, TrendingUp, Activity, FileText, FileJson, BookOpen } from "lucide-react";
-import { TestResult } from "../lib/storage";
-import { RiskCard } from "../components/RiskCard";
-import { FactorsList } from "../components/FactorsList";
-import { DebugPanel } from "../components/DebugPanel";
-import { downloadReport, convertToExportable } from "../lib/reportExport";
-import { CancerRiskResult, RiskFactor, DebugData } from "../lib/predictionEngine";
-import { getAllCitations, formatCitation } from "../lib/citations";
+import { TestResult } from "@/lib/storage";
+import { RiskCard } from "@/components/RiskCard";
+import { FactorsList } from "@/components/FactorsList";
+import { DebugPanel } from "@/components/DebugPanel";
+import { downloadReport, convertToExportable } from "@/lib/reportExport";
+import { CancerRiskResult, RiskFactor, DebugData } from "@/lib/predictionEngine";
+import { getAllCitations, formatCitation } from "@/lib/citations";
 // CANary Results Processing Module
 // Handles visualization, interpretation, and reporting of risk outputs
 // Author: Druhi
@@ -305,7 +305,7 @@ const Results = () => {
           <h2 className="font-semibold mb-2">AI Explanation</h2>
 
              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-        {aiText || "Generating AI insights..."}
+        {aiText || "Generating AI insights@."}
              </p>
         </div>
         
