@@ -450,16 +450,32 @@ const StartTest = () => {
       aiAnalysis: aiAnalysis,
     };
     
-    // Save locally for offline access
-    saveReport(report);
-    
-    // Save to database for persistence
-    try {
-      await saveAssessmentToDb(report);
-    } catch (dbError) {
-      console.error("Failed to save to database:", dbError);
-      // Local save succeeded, so we continue
-    }
+    // Save locally (keep this)
+saveReport(report);
+
+// 🔥 NEW: Save to Supabase reports table (IMPORTANT)
+try {
+  const { error } = await supabase.from("reports").insert([
+    {
+      user_id: (await supabase.auth.getUser()).data.user?.id,
+      input_data: formData,
+      result: JSON.stringify(prediction), // store AI result
+    },
+  ]);
+
+  if (error) {
+    console.error("Supabase insert error:", error);
+  }
+} catch (err) {
+  console.error("Unexpected DB error:", err);
+}
+
+// Optional: keep your old DB system if needed
+try {
+  await saveAssessmentToDb(report);
+} catch (dbError) {
+  console.error("Legacy DB save failed:", dbError);
+}
     
     setLoading(false);
     navigate("/results", { state: { report } });
