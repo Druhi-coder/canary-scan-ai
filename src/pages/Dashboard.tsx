@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"; // ✅ FIXED
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,23 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [reports, setReports] = useState<any[]>([]);
 
+  // 🔍 FETCH REPORTS (WITH DEBUG)
+  const fetchReports = async () => {
+    const { data, error } = await supabase
+      .from("reports")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    console.log("FETCH DATA:", data);
+    console.log("FETCH ERROR:", error);
+    console.log("USER:", user);
+
+    if (!error && data) {
+      setReports(data);
+    }
+  };
+
+  // 🧠 ANALYZE + INSERT
   const handleAnalyze = async () => {
     if (!input) return;
 
@@ -28,30 +45,22 @@ const Dashboard = () => {
       ]);
 
       if (error) {
+        console.error("INSERT ERROR:", error);
         toast.error(error.message);
       } else {
         toast.success("Report generated!");
         setInput("");
-        fetchReports(); // ✅ IMPORTANT
+        fetchReports(); // 🔥 refresh data
       }
     } catch (err) {
+      console.error(err);
       toast.error("Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchReports = async () => {
-    const { data, error } = await supabase
-      .from("reports")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setReports(data);
-    }
-  };
-
+  // 🔄 LOAD ON PAGE OPEN
   useEffect(() => {
     fetchReports();
   }, []);
@@ -70,7 +79,10 @@ const Dashboard = () => {
         {loading ? "Analyzing..." : "Analyze"}
       </Button>
 
-      {/* ✅ SHOW REPORTS */}
+      {/* 🔍 DEBUG INFO */}
+      <p>Total reports: {reports.length}</p>
+
+      {/* ✅ DISPLAY REPORTS */}
       <div className="mt-6 space-y-3">
         {reports.map((report) => (
           <div key={report.id} className="p-3 border rounded">
