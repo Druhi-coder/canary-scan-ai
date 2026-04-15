@@ -1,5 +1,7 @@
+import { generateAIExplanation } from "@/lib/ai";
 import { downloadPDFReport } from "@/lib/reportExport";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -22,7 +24,8 @@ const Results = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const report = location.state?.report as TestResult | undefined;
-
+  const [aiText, setAiText] = useState("");
+  
   if (!report) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -104,7 +107,19 @@ const Results = () => {
   ];
 
   const reportUrl = `${window.location.origin}/my-reports?id=${report.id}`;
+  useEffect(() => {
+  const runAI = async () => {
+    if (!report) return;
+    try {
+      const text = await generateAIExplanation(report);
+      setAiText(text);
+    } catch (e) {
+      console.error("AI error:", e);
+    }
+  };
 
+  runAI();
+}, [report]);
   const handleDownloadText = () => {
     downloadReport(report, 'text');
   };
@@ -125,7 +140,6 @@ const Results = () => {
 
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-3">Your CANary Results</h1>
           <h1 className="text-4xl font-bold mb-3">
   CANary AI Risk Assessment Report
 </h1>
@@ -286,6 +300,15 @@ const Results = () => {
           </CardContent>
         </Card>
 
+        {/* 🤖 AI Explanation */}
+        <div className="p-4 border rounded-lg mt-6">
+          <h2 className="font-semibold mb-2">AI Explanation</h2>
+
+             <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+        {aiText || "Generating AI insights..."}
+             </p>
+        </div>
+        
         {/* AI Interpretation - Using new FactorsList component */}
         {rankedFactors && rankedFactors.length > 0 ? (
           <div className="mb-8">
