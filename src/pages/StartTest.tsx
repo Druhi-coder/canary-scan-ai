@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,15 @@ const StartTest = () => {
   const [consentGiven, setConsentGiven] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadedReport, setUploadedReport] = useState<{ text: string; fileName: string } | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+useEffect(() => {
+  const getUser = async () => {
+    const { data } = await supabase.auth.getUser();
+    setUserId(data.user?.id || null);
+  };
+  getUser();
+}, []);
 
   // Form state with IEEE-ready structure
   const [formData, setFormData] = useState({
@@ -457,9 +466,9 @@ saveReport(report);
 try {
   const { error } = await supabase.from("reports").insert([
     {
-      user_id: (await supabase.auth.getUser()).data.user?.id,
+      user_id: userId,
       input_data: formData,
-      result: JSON.stringify(prediction), // store AI result
+      result: `${prediction.pancreatic.riskLabel} / ${prediction.colon.riskLabel} / ${prediction.blood.riskLabel}`,
     },
   ]);
 
