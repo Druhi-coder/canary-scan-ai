@@ -8,13 +8,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { QRCodeSVG } from "qrcode.react";
 import { ArrowLeft, Download, Share2, AlertCircle, TrendingUp, Activity, FileText, FileJson, BookOpen } from "lucide-react";
-import { TestResult } from "@/lib/storage";
+import { TestResult } from "../lib/storage";
 import { RiskCard } from "@/components/RiskCard";
 import { FactorsList } from "@/components/FactorsList";
 import { DebugPanel } from "@/components/DebugPanel";
-import { downloadReport, convertToExportable } from "@/lib/reportExport";
-import { CancerRiskResult, RiskFactor, DebugData } from "@/lib/predictionEngine";
-import { getAllCitations, formatCitation } from "@/lib/citations";
+import { downloadReport, convertToExportable } from "../lib/reportExport";
+import { CancerRiskResult, RiskFactor, DebugData } from "../lib/predictionEngine";
+import { getAllCitations, formatCitation } from "../lib/citations";
 // CANary Results Processing Module
 // Handles visualization, interpretation, and reporting of risk outputs
 // Author: Druhi
