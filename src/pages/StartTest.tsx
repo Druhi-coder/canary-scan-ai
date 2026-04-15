@@ -364,7 +364,7 @@ useEffect(() => {
             prediction = {
              ...prediction,
               pancreatic: {
-                @.prediction.pancreatic,
+                ...prediction.pancreatic,
                 probability: Math.round(clamped * 100) / 100,
                 rawScore: clamped,
                 riskLabel: clamped < 0.3 ? 'Low' : clamped < 0.6 ? 'Medium' : 'High',
@@ -377,7 +377,7 @@ useEffect(() => {
             prediction = {
              ...prediction,
               colon: {
-                @.prediction.colon,
+                ...prediction.colon,
                 probability: Math.round(clamped * 100) / 100,
                 rawScore: clamped,
                 riskLabel: clamped < 0.3 ? 'Low' : clamped < 0.6 ? 'Medium' : 'High',
@@ -390,7 +390,7 @@ useEffect(() => {
             prediction = {
              ...prediction,
               blood: {
-                @.prediction.blood,
+                ...prediction.blood,
                 probability: Math.round(clamped * 100) / 100,
                 rawScore: clamped,
                 riskLabel: clamped < 0.3 ? 'Low' : clamped < 0.6 ? 'Medium' : 'High',
