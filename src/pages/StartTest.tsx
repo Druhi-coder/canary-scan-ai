@@ -413,7 +413,7 @@ useEffect(() => {
         if (online) {
           toast({
             title: "Analyzing Report",
-            description: "AI is analyzing your medical report@.",
+            description: "AI is analyzing your medical report...",
           });
 
           const { data, error } = await supabase.functions.invoke("analyze-medical-report", {
@@ -436,7 +436,7 @@ useEffect(() => {
         } else {
           toast({
             title: "Analyzing Offline",
-            description: "Using offline analysis@.",
+            description: "Using offline analysis...",
           });
           aiAnalysis = await analyzeReportOffline(uploadedReport.text, formData);
           toast({
@@ -1111,7 +1111,7 @@ try {
           <div className="flex justify-center">
             {loading && (
              <div className="text-center text-sm text-muted-foreground mb-4">
-              Processing your data, running AI models, and generating report@.
+              Processing your data, running AI models, and generating report...
           </div>
        )}
             <Button 
@@ -1120,7 +1120,7 @@ try {
               className="px-12"
               disabled={loading || !consentGiven}
             >
-             {loading ? "Running AI Analysis@." : "Run CANary Scan"}
+             {loading ? "Running AI Analysis..." : "Run CANary Scan"}
             </Button>
           </div>
         </form>
