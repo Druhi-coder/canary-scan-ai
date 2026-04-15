@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
-import { QRCodeSVG } from "qrcode.react";
+import QRCodeSVG from "qrcode.react";
 import { ArrowLeft, Download, Share2, AlertCircle, TrendingUp, Activity, FileText, FileJson, BookOpen } from "lucide-react";
 import { TestResult } from "@/lib/storage";
 import { RiskCard } from "@/components/RiskCard";
