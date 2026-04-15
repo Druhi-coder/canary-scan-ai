@@ -305,7 +305,7 @@ const Results = () => {
           <h2 className="font-semibold mb-2">AI Explanation</h2>
 
              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-        {aiText || "Generating AI insights@."}
+        {aiText || "Generating AI insights..."}
              </p>
         </div>
         
