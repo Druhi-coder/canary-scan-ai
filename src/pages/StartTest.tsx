@@ -1,22 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Checkbox } from "../components/ui/checkbox";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Alert, AlertDescription } from "../components/ui/alert";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { generatePrediction, PredictionInput } from "../lib/predictionEngine";
 import { saveReport } from "../lib/storage";
 import { saveAssessmentToDb } from "../lib/assessmentStorage";
-import { useToast } from "@/hooks/use-toast";
-import { MedicalReportUpload } from "@/components/MedicalReportUpload";
-import { BMIDisplay } from "@/components/BMIDisplay";
-import { SymptomCheckbox } from "@/components/SymptomCheckbox";
-import { HemoglobinInput, WBCInput, PlateletInput, BilirubinInput, BloodSugarInput, CA199Input, CEAInput, LDHInput } from "@/components/LabValueInput";
-import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "../hooks/use-toast";
+import { MedicalReportUpload } from "../components/MedicalReportUpload";
+import { BMIDisplay } from "../components/BMIDisplay";
+import { SymptomCheckbox } from "../components/SymptomCheckbox";
+import { HemoglobinInput, WBCInput, PlateletInput, BilirubinInput, BloodSugarInput, CA199Input, CEAInput, LDHInput } from "../components/LabValueInput";
+import { supabase } from "../integrations/supabase/client";
 import { isOnline, analyzeReportOffline } from "../lib/offlineAI";
 
 const StartTest = () => {
