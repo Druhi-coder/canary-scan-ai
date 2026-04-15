@@ -8,16 +8,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
-import { generatePrediction, PredictionInput } from "@/lib/predictionEngine";
-import { saveReport } from "@/lib/storage";
-import { saveAssessmentToDb } from "@/lib/assessmentStorage";
+import { generatePrediction, PredictionInput } from "../lib/predictionEngine";
+import { saveReport } from "../lib/storage";
+import { saveAssessmentToDb } from "../lib/assessmentStorage";
 import { useToast } from "@/hooks/use-toast";
 import { MedicalReportUpload } from "@/components/MedicalReportUpload";
 import { BMIDisplay } from "@/components/BMIDisplay";
 import { SymptomCheckbox } from "@/components/SymptomCheckbox";
 import { HemoglobinInput, WBCInput, PlateletInput, BilirubinInput, BloodSugarInput, CA199Input, CEAInput, LDHInput } from "@/components/LabValueInput";
 import { supabase } from "@/integrations/supabase/client";
-import { isOnline, analyzeReportOffline } from "@/lib/offlineAI";
+import { isOnline, analyzeReportOffline } from "../lib/offlineAI";
 
 const StartTest = () => {
   const navigate = useNavigate();
