@@ -1,23 +1,23 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Checkbox } from "../components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Alert, AlertDescription } from "../components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
-import { generatePrediction, PredictionInput } from "../lib/predictionEngine";
-import { saveReport } from "../lib/storage";
-import { saveAssessmentToDb } from "../lib/assessmentStorage";
-import { useToast } from "../hooks/use-toast";
-import { MedicalReportUpload } from "../components/MedicalReportUpload";
-import { BMIDisplay } from "../components/BMIDisplay";
-import { SymptomCheckbox } from "../components/SymptomCheckbox";
-import { HemoglobinInput, WBCInput, PlateletInput, BilirubinInput, BloodSugarInput, CA199Input, CEAInput, LDHInput } from "../components/LabValueInput";
-import { supabase } from "../integrations/supabase/client";
-import { isOnline, analyzeReportOffline } from "../lib/offlineAI";
+import { generatePrediction, PredictionInput } from "@/lib/predictionEngine";
+import { saveReport } from "@/lib/storage";
+import { saveAssessmentToDb } from "@/lib/assessmentStorage";
+import { useToast } from "@/hooks/use-toast";
+import { MedicalReportUpload } from "@/components/MedicalReportUpload";
+import { BMIDisplay } from "@/components/BMIDisplay";
+import { SymptomCheckbox } from "@/components/SymptomCheckbox";
+import { HemoglobinInput, WBCInput, PlateletInput, BilirubinInput, BloodSugarInput, CA199Input, CEAInput, LDHInput } from "@/components/LabValueInput";
+import { supabase } from "@/integrations/supabase/client";
+import { isOnline, analyzeReportOffline } from "@/lib/offlineAI";
 
 const StartTest = () => {
   const navigate = useNavigate();
@@ -159,9 +159,9 @@ useEffect(() => {
   const handleNoneOfAbove = (group: 'medical' | 'general' | 'pancreatic' | 'colon' | 'blood', checked: boolean) => {
     if (group === 'medical') {
       setFormData({
-        ...formData,
+        @.formData,
         noMedicalHistory: checked,
-        ...(checked && {
+        @.(checked && {
           familyCancerHistory: false,
           diabetesHistory: false,
           ibdHistory: false,
@@ -172,9 +172,9 @@ useEffect(() => {
       });
     } else if (group === 'general') {
       setFormData({
-        ...formData,
+        @.formData,
         noGeneralSymptoms: checked,
-        ...(checked && {
+        @.(checked && {
           fatigue: false,
           fatigueDuration: "",
           weightLoss: false,
@@ -188,9 +188,9 @@ useEffect(() => {
       });
     } else if (group === 'pancreatic') {
       setFormData({
-        ...formData,
+        @.formData,
         noPancreaticSymptoms: checked,
-        ...(checked && {
+        @.(checked && {
           abdominalPain: false,
           backPain: false,
           nausea: false,
@@ -201,9 +201,9 @@ useEffect(() => {
       });
     } else if (group === 'colon') {
       setFormData({
-        ...formData,
+        @.formData,
         noColonSymptoms: checked,
-        ...(checked && {
+        @.(checked && {
           bloodInStool: false,
           bloodInStoolDuration: "",
           constipation: false,
@@ -213,9 +213,9 @@ useEffect(() => {
       });
     } else if (group === 'blood') {
       setFormData({
-        ...formData,
+        @.formData,
         noBloodSymptoms: checked,
-        ...(checked && {
+        @.(checked && {
           infections: false,
           infectionsDuration: "",
           nosebleeds: false,
@@ -362,9 +362,9 @@ useEffect(() => {
             const adjusted = prediction.pancreatic.rawScore + adj.pancreatic.adjustment;
             const clamped = Math.max(0, Math.min(0.95, adjusted));
             prediction = {
-              ...prediction,
+              @.prediction,
               pancreatic: {
-                ...prediction.pancreatic,
+                @.prediction.pancreatic,
                 probability: Math.round(clamped * 100) / 100,
                 rawScore: clamped,
                 riskLabel: clamped < 0.3 ? 'Low' : clamped < 0.6 ? 'Medium' : 'High',
@@ -375,9 +375,9 @@ useEffect(() => {
             const adjusted = prediction.colon.rawScore + adj.colon.adjustment;
             const clamped = Math.max(0, Math.min(0.95, adjusted));
             prediction = {
-              ...prediction,
+              @.prediction,
               colon: {
-                ...prediction.colon,
+                @.prediction.colon,
                 probability: Math.round(clamped * 100) / 100,
                 rawScore: clamped,
                 riskLabel: clamped < 0.3 ? 'Low' : clamped < 0.6 ? 'Medium' : 'High',
@@ -388,9 +388,9 @@ useEffect(() => {
             const adjusted = prediction.blood.rawScore + adj.blood.adjustment;
             const clamped = Math.max(0, Math.min(0.95, adjusted));
             prediction = {
-              ...prediction,
+              @.prediction,
               blood: {
-                ...prediction.blood,
+                @.prediction.blood,
                 probability: Math.round(clamped * 100) / 100,
                 rawScore: clamped,
                 riskLabel: clamped < 0.3 ? 'Low' : clamped < 0.6 ? 'Medium' : 'High',
@@ -413,7 +413,7 @@ useEffect(() => {
         if (online) {
           toast({
             title: "Analyzing Report",
-            description: "AI is analyzing your medical report...",
+            description: "AI is analyzing your medical report@.",
           });
 
           const { data, error } = await supabase.functions.invoke("analyze-medical-report", {
@@ -436,7 +436,7 @@ useEffect(() => {
         } else {
           toast({
             title: "Analyzing Offline",
-            description: "Using offline analysis...",
+            description: "Using offline analysis@.",
           });
           aiAnalysis = await analyzeReportOffline(uploadedReport.text, formData);
           toast({
@@ -539,7 +539,7 @@ try {
                   <Input 
                     id="name" 
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => setFormData({@.formData, name: e.target.value})}
                   />
                 </div>
                 <div>
@@ -551,14 +551,14 @@ try {
                     min="0"
                     max="120"
                     value={formData.age}
-                    onChange={(e) => setFormData({...formData, age: e.target.value})}
+                    onChange={(e) => setFormData({@.formData, age: e.target.value})}
                     className={errors.age ? 'border-destructive' : ''}
                   />
                   {errors.age && <p className="text-xs text-destructive mt-1">{errors.age}</p>}
                 </div>
                 <div>
                   <Label htmlFor="gender">Gender *</Label>
-                  <Select value={formData.gender} onValueChange={(value) => setFormData({...formData, gender: value})}>
+                  <Select value={formData.gender} onValueChange={(value) => setFormData({@.formData, gender: value})}>
                     <SelectTrigger className={errors.gender ? 'border-destructive' : ''}>
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
@@ -572,7 +572,7 @@ try {
                 </div>
                 <div>
                   <Label htmlFor="bloodGroup">Blood Group</Label>
-                  <Select value={formData.bloodGroup} onValueChange={(value) => setFormData({...formData, bloodGroup: value})}>
+                  <Select value={formData.bloodGroup} onValueChange={(value) => setFormData({@.formData, bloodGroup: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select blood group" />
                     </SelectTrigger>
@@ -596,7 +596,7 @@ try {
                     min="50"
                     max="300"
                     value={formData.height}
-                    onChange={(e) => setFormData({...formData, height: e.target.value})}
+                    onChange={(e) => setFormData({@.formData, height: e.target.value})}
                     className={errors.height ? 'border-destructive' : ''}
                   />
                   {errors.height && <p className="text-xs text-destructive mt-1">{errors.height}</p>}
@@ -609,7 +609,7 @@ try {
                     min="10"
                     max="500"
                     value={formData.weight}
-                    onChange={(e) => setFormData({...formData, weight: e.target.value})}
+                    onChange={(e) => setFormData({@.formData, weight: e.target.value})}
                     className={errors.weight ? 'border-destructive' : ''}
                   />
                   {errors.weight && <p className="text-xs text-destructive mt-1">{errors.weight}</p>}
@@ -633,13 +633,13 @@ try {
                   id="familyCancerHistory" 
                   checked={formData.familyCancerHistory}
                   disabled={formData.noMedicalHistory}
-                  onCheckedChange={(checked) => setFormData({...formData, familyCancerHistory: checked as boolean, noMedicalHistory: false})}
+                  onCheckedChange={(checked) => setFormData({@.formData, familyCancerHistory: checked as boolean, noMedicalHistory: false})}
                 />
                 <Label htmlFor="familyCancerHistory" className="cursor-pointer">Family history of cancer</Label>
               </div>
               {formData.familyCancerHistory && (
                 <div className="ml-6">
-                  <Select value={formData.familyCancerType} onValueChange={(value) => setFormData({...formData, familyCancerType: value})}>
+                  <Select value={formData.familyCancerType} onValueChange={(value) => setFormData({@.formData, familyCancerType: value})}>
                     <SelectTrigger className="w-64 h-8 text-sm">
                       <SelectValue placeholder="Specify cancer type (optional)" />
                     </SelectTrigger>
@@ -659,7 +659,7 @@ try {
                   id="diabetesHistory" 
                   checked={formData.diabetesHistory}
                   disabled={formData.noMedicalHistory}
-                  onCheckedChange={(checked) => setFormData({...formData, diabetesHistory: checked as boolean, noMedicalHistory: false})}
+                  onCheckedChange={(checked) => setFormData({@.formData, diabetesHistory: checked as boolean, noMedicalHistory: false})}
                 />
                 <Label htmlFor="diabetesHistory" className="cursor-pointer">Family history of diabetes</Label>
               </div>
@@ -668,7 +668,7 @@ try {
                   id="ibdHistory" 
                   checked={formData.ibdHistory}
                   disabled={formData.noMedicalHistory}
-                  onCheckedChange={(checked) => setFormData({...formData, ibdHistory: checked as boolean, noMedicalHistory: false})}
+                  onCheckedChange={(checked) => setFormData({@.formData, ibdHistory: checked as boolean, noMedicalHistory: false})}
                 />
                 <Label htmlFor="ibdHistory" className="cursor-pointer">History of inflammatory bowel disease (IBD)</Label>
               </div>
@@ -677,7 +677,7 @@ try {
                   id="hepatitisHistory" 
                   checked={formData.hepatitisHistory}
                   disabled={formData.noMedicalHistory}
-                  onCheckedChange={(checked) => setFormData({...formData, hepatitisHistory: checked as boolean, noMedicalHistory: false})}
+                  onCheckedChange={(checked) => setFormData({@.formData, hepatitisHistory: checked as boolean, noMedicalHistory: false})}
                 />
                 <Label htmlFor="hepatitisHistory" className="cursor-pointer">History of hepatitis, pancreatitis, or jaundice</Label>
               </div>
@@ -686,7 +686,7 @@ try {
                   id="anemiaHistory" 
                   checked={formData.anemiaHistory}
                   disabled={formData.noMedicalHistory}
-                  onCheckedChange={(checked) => setFormData({...formData, anemiaHistory: checked as boolean, noMedicalHistory: false})}
+                  onCheckedChange={(checked) => setFormData({@.formData, anemiaHistory: checked as boolean, noMedicalHistory: false})}
                 />
                 <Label htmlFor="anemiaHistory" className="cursor-pointer">History of anemia or bleeding disorders</Label>
               </div>
@@ -695,7 +695,7 @@ try {
                   id="autoimmune" 
                   checked={formData.autoimmune}
                   disabled={formData.noMedicalHistory}
-                  onCheckedChange={(checked) => setFormData({...formData, autoimmune: checked as boolean, noMedicalHistory: false})}
+                  onCheckedChange={(checked) => setFormData({@.formData, autoimmune: checked as boolean, noMedicalHistory: false})}
                 />
                 <Label htmlFor="autoimmune" className="cursor-pointer">Autoimmune disorders</Label>
               </div>
@@ -722,7 +722,7 @@ try {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label>Smoking Frequency</Label>
-                  <Select value={formData.smoking} onValueChange={(value) => setFormData({...formData, smoking: value})}>
+                  <Select value={formData.smoking} onValueChange={(value) => setFormData({@.formData, smoking: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
@@ -736,7 +736,7 @@ try {
                 </div>
                 <div>
                   <Label>Alcohol Intake</Label>
-                  <Select value={formData.alcohol} onValueChange={(value) => setFormData({...formData, alcohol: value})}>
+                  <Select value={formData.alcohol} onValueChange={(value) => setFormData({@.formData, alcohol: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
@@ -750,7 +750,7 @@ try {
                 </div>
                 <div>
                   <Label>Sleep Duration</Label>
-                  <Select value={formData.sleep} onValueChange={(value) => setFormData({...formData, sleep: value})}>
+                  <Select value={formData.sleep} onValueChange={(value) => setFormData({@.formData, sleep: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select duration" />
                     </SelectTrigger>
@@ -764,7 +764,7 @@ try {
                 </div>
                 <div>
                   <Label>Physical Activity</Label>
-                  <Select value={formData.physicalActivity} onValueChange={(value) => setFormData({...formData, physicalActivity: value})}>
+                  <Select value={formData.physicalActivity} onValueChange={(value) => setFormData({@.formData, physicalActivity: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select activity level" />
                     </SelectTrigger>
@@ -778,7 +778,7 @@ try {
                 </div>
                 <div>
                   <Label>Diet Pattern</Label>
-                  <Select value={formData.diet} onValueChange={(value) => setFormData({...formData, diet: value})}>
+                  <Select value={formData.diet} onValueChange={(value) => setFormData({@.formData, diet: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select diet type" />
                     </SelectTrigger>
@@ -792,7 +792,7 @@ try {
                 </div>
                 <div>
                   <Label>Stress Level</Label>
-                  <Select value={formData.stress} onValueChange={(value) => setFormData({...formData, stress: value})}>
+                  <Select value={formData.stress} onValueChange={(value) => setFormData({@.formData, stress: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select stress level" />
                     </SelectTrigger>
@@ -823,46 +823,46 @@ try {
                       id="fatigue"
                       label="Persistent fatigue (>2 weeks)"
                       checked={formData.fatigue}
-                      onCheckedChange={(checked) => setFormData({...formData, fatigue: checked, noGeneralSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, fatigue: checked, noGeneralSymptoms: false})}
                       showDuration
                       duration={formData.fatigueDuration}
-                      onDurationChange={(d) => setFormData({...formData, fatigueDuration: d})}
+                      onDurationChange={(d) => setFormData({@.formData, fatigueDuration: d})}
                     />
                     <SymptomCheckbox
                       id="weightLoss"
                       label="Unexplained weight loss (>5% in 3 months)"
                       checked={formData.weightLoss}
-                      onCheckedChange={(checked) => setFormData({...formData, weightLoss: checked, noGeneralSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, weightLoss: checked, noGeneralSymptoms: false})}
                       showDuration
                       duration={formData.weightLossDuration}
-                      onDurationChange={(d) => setFormData({...formData, weightLossDuration: d})}
+                      onDurationChange={(d) => setFormData({@.formData, weightLossDuration: d})}
                     />
                     <SymptomCheckbox
                       id="jaundice"
                       label="Jaundice (yellowing skin/eyes)"
                       checked={formData.jaundice}
-                      onCheckedChange={(checked) => setFormData({...formData, jaundice: checked, noGeneralSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, jaundice: checked, noGeneralSymptoms: false})}
                       showDuration
                       duration={formData.jaundiceDuration}
-                      onDurationChange={(d) => setFormData({...formData, jaundiceDuration: d})}
+                      onDurationChange={(d) => setFormData({@.formData, jaundiceDuration: d})}
                     />
                     <SymptomCheckbox
                       id="appetiteLoss"
                       label="Loss of appetite"
                       checked={formData.appetiteLoss}
-                      onCheckedChange={(checked) => setFormData({...formData, appetiteLoss: checked, noGeneralSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, appetiteLoss: checked, noGeneralSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="fever"
                       label="Recurring low-grade fever"
                       checked={formData.fever}
-                      onCheckedChange={(checked) => setFormData({...formData, fever: checked, noGeneralSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, fever: checked, noGeneralSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="dizziness"
                       label="Dizziness or lightheadedness"
                       checked={formData.dizziness}
-                      onCheckedChange={(checked) => setFormData({...formData, dizziness: checked, noGeneralSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, dizziness: checked, noGeneralSymptoms: false})}
                     />
                   </div>
                   <div className="border-t pt-3 mt-3">
@@ -883,37 +883,37 @@ try {
                       id="abdominalPain"
                       label="Upper abdominal pain"
                       checked={formData.abdominalPain}
-                      onCheckedChange={(checked) => setFormData({...formData, abdominalPain: checked, noPancreaticSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, abdominalPain: checked, noPancreaticSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="backPain"
                       label="Pain radiating to back"
                       checked={formData.backPain}
-                      onCheckedChange={(checked) => setFormData({...formData, backPain: checked, noPancreaticSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, backPain: checked, noPancreaticSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="nausea"
                       label="Persistent nausea"
                       checked={formData.nausea}
-                      onCheckedChange={(checked) => setFormData({...formData, nausea: checked, noPancreaticSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, nausea: checked, noPancreaticSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="newDiabetes"
                       label="Newly developed diabetes"
                       checked={formData.newDiabetes}
-                      onCheckedChange={(checked) => setFormData({...formData, newDiabetes: checked, noPancreaticSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, newDiabetes: checked, noPancreaticSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="itchySkin"
                       label="Itchy skin"
                       checked={formData.itchySkin}
-                      onCheckedChange={(checked) => setFormData({...formData, itchySkin: checked, noPancreaticSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, itchySkin: checked, noPancreaticSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="floatingStool"
                       label="Floating, greasy stools"
                       checked={formData.floatingStool}
-                      onCheckedChange={(checked) => setFormData({...formData, floatingStool: checked, noPancreaticSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, floatingStool: checked, noPancreaticSymptoms: false})}
                     />
                   </div>
                   <div className="border-t pt-3 mt-3">
@@ -934,28 +934,28 @@ try {
                       id="bloodInStool"
                       label="Blood in stool"
                       checked={formData.bloodInStool}
-                      onCheckedChange={(checked) => setFormData({...formData, bloodInStool: checked, noColonSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, bloodInStool: checked, noColonSymptoms: false})}
                       showDuration
                       duration={formData.bloodInStoolDuration}
-                      onDurationChange={(d) => setFormData({...formData, bloodInStoolDuration: d})}
+                      onDurationChange={(d) => setFormData({@.formData, bloodInStoolDuration: d})}
                     />
                     <SymptomCheckbox
                       id="constipation"
                       label="Alternating constipation/diarrhea"
                       checked={formData.constipation}
-                      onCheckedChange={(checked) => setFormData({...formData, constipation: checked, noColonSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, constipation: checked, noColonSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="narrowStool"
                       label="Narrow, pencil-thin stools"
                       checked={formData.narrowStool}
-                      onCheckedChange={(checked) => setFormData({...formData, narrowStool: checked, noColonSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, narrowStool: checked, noColonSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="bloating"
                       label="Persistent bloating"
                       checked={formData.bloating}
-                      onCheckedChange={(checked) => setFormData({...formData, bloating: checked, noColonSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, bloating: checked, noColonSymptoms: false})}
                     />
                   </div>
                   <div className="border-t pt-3 mt-3">
@@ -976,46 +976,46 @@ try {
                       id="infections"
                       label="Recurring infections"
                       checked={formData.infections}
-                      onCheckedChange={(checked) => setFormData({...formData, infections: checked, noBloodSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, infections: checked, noBloodSymptoms: false})}
                       showDuration
                       duration={formData.infectionsDuration}
-                      onDurationChange={(d) => setFormData({...formData, infectionsDuration: d})}
+                      onDurationChange={(d) => setFormData({@.formData, infectionsDuration: d})}
                     />
                     <SymptomCheckbox
                       id="nosebleeds"
                       label="Frequent nosebleeds"
                       checked={formData.nosebleeds}
-                      onCheckedChange={(checked) => setFormData({...formData, nosebleeds: checked, noBloodSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, nosebleeds: checked, noBloodSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="bonePain"
                       label="Bone or joint pain"
                       checked={formData.bonePain}
-                      onCheckedChange={(checked) => setFormData({...formData, bonePain: checked, noBloodSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, bonePain: checked, noBloodSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="swollenLymphNodes"
                       label="Swollen lymph nodes"
                       checked={formData.swollenLymphNodes}
-                      onCheckedChange={(checked) => setFormData({...formData, swollenLymphNodes: checked, noBloodSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, swollenLymphNodes: checked, noBloodSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="shortBreath"
                       label="Shortness of breath"
                       checked={formData.shortBreath}
-                      onCheckedChange={(checked) => setFormData({...formData, shortBreath: checked, noBloodSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, shortBreath: checked, noBloodSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="paleSkin"
                       label="Pale or yellowish skin"
                       checked={formData.paleSkin}
-                      onCheckedChange={(checked) => setFormData({...formData, paleSkin: checked, noBloodSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, paleSkin: checked, noBloodSymptoms: false})}
                     />
                     <SymptomCheckbox
                       id="bruising"
                       label="Easy bruising or bleeding"
                       checked={formData.bruising}
-                      onCheckedChange={(checked) => setFormData({...formData, bruising: checked, noBloodSymptoms: false})}
+                      onCheckedChange={(checked) => setFormData({@.formData, bruising: checked, noBloodSymptoms: false})}
                     />
                   </div>
                   <div className="border-t pt-3 mt-3">
@@ -1041,23 +1041,23 @@ try {
               <div className="grid md:grid-cols-2 gap-6">
                 <HemoglobinInput
                   value={formData.hemoglobin}
-                  onChange={(v) => setFormData({...formData, hemoglobin: v})}
+                  onChange={(v) => setFormData({@.formData, hemoglobin: v})}
                 />
                 <WBCInput
                   value={formData.wbcCount}
-                  onChange={(v) => setFormData({...formData, wbcCount: v})}
+                  onChange={(v) => setFormData({@.formData, wbcCount: v})}
                 />
                 <PlateletInput
                   value={formData.plateletCount}
-                  onChange={(v) => setFormData({...formData, plateletCount: v})}
+                  onChange={(v) => setFormData({@.formData, plateletCount: v})}
                 />
                 <BilirubinInput
                   value={formData.bilirubin}
-                  onChange={(v) => setFormData({...formData, bilirubin: v})}
+                  onChange={(v) => setFormData({@.formData, bilirubin: v})}
                 />
                 <BloodSugarInput
                   value={formData.bloodSugar}
-                  onChange={(v) => setFormData({...formData, bloodSugar: v})}
+                  onChange={(v) => setFormData({@.formData, bloodSugar: v})}
                 />
               </div>
               
@@ -1067,15 +1067,15 @@ try {
                 <div className="grid md:grid-cols-3 gap-6">
                   <CA199Input
                     value={formData.ca199}
-                    onChange={(v) => setFormData({...formData, ca199: v})}
+                    onChange={(v) => setFormData({@.formData, ca199: v})}
                   />
                   <CEAInput
                     value={formData.cea}
-                    onChange={(v) => setFormData({...formData, cea: v})}
+                    onChange={(v) => setFormData({@.formData, cea: v})}
                   />
                   <LDHInput
                     value={formData.ldh}
-                    onChange={(v) => setFormData({...formData, ldh: v})}
+                    onChange={(v) => setFormData({@.formData, ldh: v})}
                   />
                 </div>
               </div>
@@ -1111,7 +1111,7 @@ try {
           <div className="flex justify-center">
             {loading && (
              <div className="text-center text-sm text-muted-foreground mb-4">
-              Processing your data, running AI models, and generating report...
+              Processing your data, running AI models, and generating report@.
           </div>
        )}
             <Button 
@@ -1120,7 +1120,7 @@ try {
               className="px-12"
               disabled={loading || !consentGiven}
             >
-             {loading ? "Running AI Analysis..." : "Run CANary Scan"}
+             {loading ? "Running AI Analysis@." : "Run CANary Scan"}
             </Button>
           </div>
         </form>
