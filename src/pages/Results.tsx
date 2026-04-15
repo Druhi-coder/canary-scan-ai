@@ -1,4 +1,4 @@
-import { generateAIExplanation } from "@/lib/ai";
+import { generateAIExplanation } from "../lib/ai";
 import { downloadPDFReport } from "@/lib/reportExport";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
