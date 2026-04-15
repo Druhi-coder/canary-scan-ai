@@ -125,6 +125,39 @@ const Results = () => {
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-3">Your CANary Results</h1>
+          <h1 className="text-4xl font-bold mb-3">
+  CANary AI Risk Assessment Report
+</h1>
+
+{/* 🔥 ADD THIS BLOCK RIGHT HERE */}
+<div className="mt-4 p-4 border rounded-lg bg-accent">
+  <h2 className="text-lg font-semibold mb-2">Final Risk Verdict</h2>
+
+  {(() => {
+    const maxRisk = Math.max(
+      predictions.pancreatic.probability,
+      predictions.colon.probability,
+      predictions.blood.probability
+    );
+
+    let verdict = "Low Risk";
+    let color = "text-green-500";
+
+    if (maxRisk >= 0.6) {
+      verdict = "High Risk";
+      color = "text-red-500";
+    } else if (maxRisk >= 0.3) {
+      verdict = "Moderate Risk";
+      color = "text-yellow-500";
+    }
+
+    return (
+      <p className={`text-2xl font-bold ${color}`}>
+        {verdict}
+      </p>
+    );
+  })()}
+</div>
 
 <p className="text-sm text-muted-foreground mt-2">
   CANary v3.0 | Validated on synthetic dataset (N=600) | Research Use Only
