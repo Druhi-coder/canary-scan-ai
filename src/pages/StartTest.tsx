@@ -496,7 +496,7 @@ try {
 }
     
     setLoading(false);
-    navigate("/results", { state: { report } });
+    navigate("/results", { state: {    report,    inputData: predictionInput,   predResult: prediction, } });
   };
 
   return (
