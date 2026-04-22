@@ -85,7 +85,7 @@ const Index = () => {
             <FeatureCard
               icon={<Shield className="h-8 w-8" />}
               title="Privacy First"
-              description="All data processed locally. Your information never leaves your device"
+              description="Your data is encrypted and securely stored. Only you can access your reports."
             />
             <FeatureCard
               icon={<Activity className="h-8 w-8" />}
