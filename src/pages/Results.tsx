@@ -107,20 +107,8 @@ const RiskCard = ({ title, probability, riskLabel, confidence, explanation, aiTe
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const Results = () => {
-  interface InputData {
-  age: number;
-  gender: string;
-  // add more fields later if needed
-}
-
-interface PredictionResult {
-  pancreatic: any;
-  colon: any;
-  blood: any;
-}
-
-const inputData  = location.state?.inputData as InputData | undefined;
-const predResult = location.state?.predResult as PredictionResult | undefined;
+  const location  = useLocation();
+  const navigate  = useNavigate();
 
   const report     = location.state?.report     as TestResult | undefined;
   const inputData  = location.state?.inputData  as any | undefined;
@@ -145,10 +133,7 @@ const predResult = location.state?.predResult as PredictionResult | undefined;
         setAiExplanation(result);
         setAiLoading(false);
       })
-        .catch(() => {
-       setAiLoading(false);
-       setAiExplanation(null);
-      });
+      .catch(() => setAiLoading(false));
   }, [report, inputData, predResult]);
 
   if (!report) {
