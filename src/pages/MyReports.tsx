@@ -69,7 +69,6 @@ const MyReports = () => {
 
   const loadReports = async () => {
     try {
-      // Try loading from database first
       const dbReports = await getAssessmentsFromDb();
       if (dbReports.length > 0) {
         dbReports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -122,9 +121,7 @@ const MyReports = () => {
 
   const toggleCompareSelection = (id: string) => {
     setSelectedForCompare(prev => {
-      if (prev.includes(id)) {
-        return prev.filter(i => i !== id);
-      }
+      if (prev.includes(id)) return prev.filter(i => i !== id);
       if (prev.length >= 2) {
         toast({ title: "Maximum 2 reports", description: "Deselect one to choose another." });
         return prev;
@@ -150,21 +147,95 @@ const MyReports = () => {
     toast({ title: "PDF Exported", description: `Exported ${filteredReports.length} reports.` });
   };
 
-  const handleExportComparisonPDF = () => {
-    if (reportA && reportB) {
-      generateComparisonPDF(reportA, reportB);
-      toast({ title: "Comparison PDF Exported", description: "Your comparison has been saved." });
+  // ── CSV Export ────────────────────────────────────────────────────────────
+  const handleExportCSV = () => {
+    if (filteredReports.length === 0) {
+      toast({ title: "No Reports", description: "No reports to export." });
+      return;
     }
+
+    const headers = [
+      "Date", "Age", "Gender", "BMI",
+      "Pancreatic Risk %", "Pancreatic Label", "Pancreatic Confidence",
+      "Colon Risk %", "Colon Label", "Colon Confidence",
+      "Blood Risk %", "Blood Label", "Blood Confidence",
+      "Smoking", "Alcohol", "Diet", "Physical Activity", "Stress",
+      "Family Cancer History", "Diabetes History", "IBD History",
+      "Fatigue", "Weight Loss", "Jaundice", "Blood In Stool",
+      "Swollen Lymph Nodes", "Bone Pain", "Bruising",
+      "Hemoglobin", "WBC Count", "Platelet Count", "Bilirubin", "Blood Sugar",
+      "CA19-9", "CEA", "LDH",
+    ];
+
+    const rows = filteredReports.map(r => {
+      const f = r.formData || {};
+      const p = r.predictions;
+      const bmi =
+        f.height && f.weight
+          ? (parseFloat(f.weight) / Math.pow(parseFloat(f.height) / 100, 2)).toFixed(1)
+          : "";
+      return [
+        new Date(r.date).toISOString(),
+        f.age || "",
+        f.gender || "",
+        bmi,
+        Math.round((p?.pancreatic?.probability ?? 0) * 100),
+        p?.pancreatic?.riskLabel || "",
+        p?.pancreatic?.confidence || "",
+        Math.round((p?.colon?.probability ?? 0) * 100),
+        p?.colon?.riskLabel || "",
+        p?.colon?.confidence || "",
+        Math.round((p?.blood?.probability ?? 0) * 100),
+        p?.blood?.riskLabel || "",
+        p?.blood?.confidence || "",
+        f.smoking || "",
+        f.alcohol || "",
+        f.diet || "",
+        f.physicalActivity || "",
+        f.stress || "",
+        f.familyCancerHistory ? "Yes" : "No",
+        f.diabetesHistory ? "Yes" : "No",
+        f.ibdHistory ? "Yes" : "No",
+        f.fatigue ? "Yes" : "No",
+        f.weightLoss ? "Yes" : "No",
+        f.jaundice ? "Yes" : "No",
+        f.bloodInStool ? "Yes" : "No",
+        f.swollenLymphNodes ? "Yes" : "No",
+        f.bonePain ? "Yes" : "No",
+        f.bruising ? "Yes" : "No",
+        f.hemoglobin || "",
+        f.wbcCount || "",
+        f.plateletCount || "",
+        f.bilirubin || "",
+        f.bloodSugar || "",
+        f.ca199 || "",
+        f.cea || "",
+        f.ldh || "",
+      ];
+    });
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `canary-research-data-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    toast({ title: "CSV Exported", description: `${filteredReports.length} reports exported for research.` });
   };
 
   const getCompareReports = () => {
     const [idA, idB] = selectedForCompare;
     const reportA = reports.find(r => r.id === idA);
     const reportB = reports.find(r => r.id === idB);
-    // Sort by date (older first)
     if (reportA && reportB) {
-      return new Date(reportA.date) < new Date(reportB.date) 
-        ? { reportA, reportB } 
+      return new Date(reportA.date) < new Date(reportB.date)
+        ? { reportA, reportB }
         : { reportA: reportB, reportB: reportA };
     }
     return { reportA: null, reportB: null };
@@ -189,67 +260,12 @@ const MyReports = () => {
               <PopoverContent className="w-auto p-4 z-50 bg-popover" align="end">
                 <div className="space-y-4">
                   <div className="font-medium text-sm">Filter by Date Range</div>
-                  
-                  {/* Quick Presets */}
                   <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const now = new Date();
-                        const from = new Date(now);
-                        from.setDate(now.getDate() - 7);
-                        setDateFrom(from);
-                        setDateTo(now);
-                      }}
-                      className="text-xs"
-                    >
-                      Last 7 days
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const now = new Date();
-                        const from = new Date(now);
-                        from.setDate(now.getDate() - 30);
-                        setDateFrom(from);
-                        setDateTo(now);
-                      }}
-                      className="text-xs"
-                    >
-                      Last 30 days
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const now = new Date();
-                        const from = new Date(now);
-                        from.setMonth(now.getMonth() - 3);
-                        setDateFrom(from);
-                        setDateTo(now);
-                      }}
-                      className="text-xs"
-                    >
-                      Last 3 months
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const now = new Date();
-                        const from = new Date(now);
-                        from.setFullYear(now.getFullYear() - 1);
-                        setDateFrom(from);
-                        setDateTo(now);
-                      }}
-                      className="text-xs"
-                    >
-                      Last year
-                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => { const now = new Date(); const from = new Date(now); from.setDate(now.getDate() - 7); setDateFrom(from); setDateTo(now); }} className="text-xs">Last 7 days</Button>
+                    <Button variant="outline" size="sm" onClick={() => { const now = new Date(); const from = new Date(now); from.setDate(now.getDate() - 30); setDateFrom(from); setDateTo(now); }} className="text-xs">Last 30 days</Button>
+                    <Button variant="outline" size="sm" onClick={() => { const now = new Date(); const from = new Date(now); from.setMonth(now.getMonth() - 3); setDateFrom(from); setDateTo(now); }} className="text-xs">Last 3 months</Button>
+                    <Button variant="outline" size="sm" onClick={() => { const now = new Date(); const from = new Date(now); from.setFullYear(now.getFullYear() - 1); setDateFrom(from); setDateTo(now); }} className="text-xs">Last year</Button>
                   </div>
-
                   <div className="border-t border-border pt-4">
                     <div className="text-xs text-muted-foreground mb-3">Or select custom range</div>
                     <div className="grid gap-4">
@@ -263,14 +279,7 @@ const MyReports = () => {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
-                            <CalendarComponent
-                              mode="single"
-                              selected={dateFrom}
-                              onSelect={setDateFrom}
-                              disabled={(date) => date > new Date() || (dateTo ? date > dateTo : false)}
-                              initialFocus
-                              className={cn("p-3 pointer-events-auto")}
-                            />
+                            <CalendarComponent mode="single" selected={dateFrom} onSelect={setDateFrom} disabled={(date) => date > new Date() || (dateTo ? date > dateTo : false)} initialFocus className={cn("p-3 pointer-events-auto")} />
                           </PopoverContent>
                         </Popover>
                       </div>
@@ -284,51 +293,48 @@ const MyReports = () => {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0 z-50 bg-popover" align="start">
-                            <CalendarComponent
-                              mode="single"
-                              selected={dateTo}
-                              onSelect={setDateTo}
-                              disabled={(date) => date > new Date() || (dateFrom ? date < dateFrom : false)}
-                              initialFocus
-                              className={cn("p-3 pointer-events-auto")}
-                            />
+                            <CalendarComponent mode="single" selected={dateTo} onSelect={setDateTo} disabled={(date) => date > new Date() || (dateFrom ? date < dateFrom : false)} initialFocus className={cn("p-3 pointer-events-auto")} />
                           </PopoverContent>
                         </Popover>
                       </div>
                     </div>
                   </div>
-                  
                   {hasActiveFilters && (
                     <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full gap-2">
-                      <X className="h-4 w-4" />
-                      Clear Filters
+                      <X className="h-4 w-4" /> Clear Filters
                     </Button>
                   )}
                 </div>
               </PopoverContent>
             </Popover>
+
             {selectedForCompare.length === 2 && (
               <Button variant="outline" onClick={handleCompare} className="gap-2">
-                <GitCompare className="h-4 w-4" />
-                Compare Selected
+                <GitCompare className="h-4 w-4" /> Compare Selected
               </Button>
             )}
+
             {filteredReports.length > 0 && (
               <>
                 <Button variant="outline" onClick={() => setIsEmailOpen(true)} className="gap-2">
-                  <Mail className="h-4 w-4" />
-                  Email Report
+                  <Mail className="h-4 w-4" /> Email Report
                 </Button>
                 <Button variant="outline" onClick={handleExportPDF} className="gap-2">
-                  <Download className="h-4 w-4" />
-                  Export PDF
+                  <Download className="h-4 w-4" /> Export PDF
+                </Button>
+                <Button variant="outline" onClick={handleExportCSV} className="gap-2">
+                  <Download className="h-4 w-4" /> Export CSV
                 </Button>
               </>
             )}
-            <Button onClick={() => navigate('/start-test')} className="gap-2"><Plus className="h-4 w-4" />New Test</Button>
+
+            <Button onClick={() => navigate('/start-test')} className="gap-2">
+              <Plus className="h-4 w-4" /> New Test
+            </Button>
           </div>
         </div>
       </header>
+
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
@@ -337,7 +343,7 @@ const MyReports = () => {
               <h1 className="text-3xl font-bold text-foreground">My Reports</h1>
             </div>
             <p className="text-muted-foreground">
-              {filteredReports.length === reports.length 
+              {filteredReports.length === reports.length
                 ? `${reports.length} ${reports.length === 1 ? 'report' : 'reports'} stored`
                 : `Showing ${filteredReports.length} of ${reports.length} reports`
               } • Track your risk trends over time
@@ -356,6 +362,7 @@ const MyReports = () => {
               </div>
             )}
           </div>
+
           {filteredReports.length === 0 ? (
             <Card className="text-center py-12">
               <CardContent>
@@ -385,7 +392,7 @@ const MyReports = () => {
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex items-center gap-3">
                               {filteredReports.length >= 2 && (
-                                <Checkbox 
+                                <Checkbox
                                   checked={isSelectedForCompare}
                                   onCheckedChange={() => toggleCompareSelection(report.id)}
                                   aria-label="Select for comparison"
@@ -432,21 +439,31 @@ const MyReports = () => {
                               </div>
                               <div className="space-y-4">
                                 {report.rankedFactors && report.rankedFactors.length > 0 && (
-                                  <div><h4 className="font-semibold text-sm text-muted-foreground uppercase mb-3">Key Factors</h4><div className="space-y-2">{report.rankedFactors.slice(0, 5).map((f, i) => <div key={i} className={`text-sm p-2 rounded ${f.impact === 'increases' ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-600'}`}>{f.impact === 'increases' ? '↑' : '↓'} {f.name}</div>)}</div></div>
+                                  <div>
+                                    <h4 className="font-semibold text-sm text-muted-foreground uppercase mb-3">Key Factors</h4>
+                                    <div className="space-y-2">
+                                      {report.rankedFactors.slice(0, 5).map((f, i) => (
+                                        <div key={i} className={`text-sm p-2 rounded ${f.impact === 'increases' ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-600'}`}>
+                                          {f.impact === 'increases' ? '↑' : '↓'} {f.name}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
                                 )}
-                                <div className="flex flex-col items-center p-4 bg-card border border-border rounded-lg"><p className="text-xs text-muted-foreground mb-2">Scan to share</p><QRCodeSVG value={`${window.location.origin}/results?id=${report.id}`} size={80} level="M" /></div>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  onClick={() => setEmailSingleReport(report)} 
-                                  className="w-full gap-2"
-                                >
-                                  <Mail className="h-4 w-4" />
-                                  Email This Report
+                                <div className="flex flex-col items-center p-4 bg-card border border-border rounded-lg">
+                                  <p className="text-xs text-muted-foreground mb-2">Scan to share</p>
+                                  <QRCodeSVG value={`${window.location.origin}/results?id=${report.id}`} size={80} level="M" />
+                                </div>
+                                <Button variant="outline" size="sm" onClick={() => setEmailSingleReport(report)} className="w-full gap-2">
+                                  <Mail className="h-4 w-4" /> Email This Report
                                 </Button>
                               </div>
                             </div>
-                            {index === 0 && filteredReports.length > 1 && <div className="mt-6 p-4 bg-muted/50 rounded-lg"><p className="text-sm text-muted-foreground"><strong>Trend Analysis:</strong> Comparing to previous test from {formatDate(filteredReports[1].date)}. ↑ = increased risk, ↓ = improvement.</p></div>}
+                            {index === 0 && filteredReports.length > 1 && (
+                              <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                                <p className="text-sm text-muted-foreground"><strong>Trend Analysis:</strong> Comparing to previous test from {formatDate(filteredReports[1].date)}. ↑ = increased risk, ↓ = improvement.</p>
+                              </div>
+                            )}
                           </CardContent>
                         </CollapsibleContent>
                       </Collapsible>
@@ -456,11 +473,14 @@ const MyReports = () => {
               </div>
             </>
           )}
-          <div className="mt-8 p-4 bg-muted/50 rounded-lg"><p className="text-sm text-muted-foreground text-center"><strong>Disclaimer:</strong> For research purposes only. Consult a healthcare professional for diagnosis.</p></div>
+
+          <div className="mt-8 p-4 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground text-center"><strong>Disclaimer:</strong> For research purposes only. Consult a healthcare professional for diagnosis.</p>
+          </div>
         </div>
       </main>
 
-      <ReportComparison 
+      <ReportComparison
         isOpen={isCompareOpen}
         onClose={() => setIsCompareOpen(false)}
         reportA={reportA}
