@@ -11,11 +11,11 @@ const Dashboard = () => {
 
   // 🔍 FETCH REPORTS
   const fetchReports = async () => {
-    const { data, error } = await supabase
-      .from("reports")
-      .select("*")
-      .order("created_at", { ascending: false });
-
+   const { data, error } = await supabase
+    .from("reports")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
     if (!error && data) {
       setReports(data);
     }
