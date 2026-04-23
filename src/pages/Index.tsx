@@ -26,7 +26,7 @@ const Index = () => {
                 <LogOut className="h-4 w-4" /> Sign Out
               </Button>
             ) : (
-              <Button variant="default" onClick={() => navigate("/auth")}>Sign In</Button>
+             <Button variant="default" onClick={() => navigate("/auth")}>Get Started</Button>
             )}
           </nav>
         </div>
