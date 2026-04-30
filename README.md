@@ -1,52 +1,74 @@
-# CANary — Early Cancer Risk Screening System
+# CANary — AI-Powered Early Cancer Detection System
 
-## Overview
-CANary is an AI-assisted screening system designed to estimate early-stage cancer risk using explainable, literature-calibrated models.
-
-The system analyzes demographic, behavioral, and clinical inputs to generate risk scores for multiple cancer types.
+> Early detection saves lives. CANary uses machine learning on clinical 
+> biomarker data to detect pancreatic cancer with 98% AUC-ROC.
 
 ---
 
-## Key Features
+## 🧬 ML Model — Pancreatic Cancer Detection
+
+| Model | Test AUC | CV AUC (5-fold) |
+|---|---|---|
+| Logistic Regression | 0.9641 | — |
+| Random Forest | 0.9761 | — |
+| **Gradient Boosting** | **0.9817** | **0.9467 ± 0.0142** |
+
+### Dataset
+- **Source:** Debernardi et al. (2020), PLOS Medicine
+- **Patients:** 590 real clinical samples
+- **Task:** Binary classification — Cancer vs No Cancer
+- **Biomarkers used:** CA19_9, LYVE1, Creatinine, REG1B, TFF1, REG1A
+
+### Key Findings
+- CA19_9 is the strongest predictor of pancreatic cancer
+- LYVE1 is the second most important biomarker
+- Model catches 9 out of 10 cancer cases (recall: 0.90)
+
+📓 **[View full notebook →](notebooks/canary_cancer_model.ipynb)**
+
+---
+
+## 🖥️ Web Application
+
+Built with React + TypeScript, the CANary app provides:
 - Multi-cancer risk estimation (Pancreatic, Colon, Blood)
-- Explainable risk factors and interpretation
-- Confidence scoring based on data completeness
-- Interactive visualization (charts + comparative risk)
-- Secure report storage using Supabase (RLS)
+- Explainable risk factors per prediction
+- Secure report storage via Supabase
+
+**Live Demo:** https://canary-scan-ai.vercel.app
 
 ---
 
-## System Architecture
-The system consists of:
+## 🏗️ Architecture
 
-1. Input Layer — User health and lifestyle data  
-2. Risk Engine — Literature-calibrated scoring (RR, OR models)  
-3. Interpretation Layer — Risk categorization + explanations  
-4. Visualization Layer — UI with charts and insights  
-5. Data Layer — Secure storage via Supabase  
-
-Detailed architecture: see `/docs/ARCHITECTURE.md`
+User Input → Risk Engine → ML Model → SHAP Explanation → Report
 
 ---
 
-## Tech Stack
-- React + TypeScript
-- Tailwind CSS
-- Supabase (Database + Auth)
-- Vercel (Deployment)
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React + TypeScript + Tailwind CSS |
+| ML Pipeline | Python, scikit-learn, SHAP |
+| Database | Supabase (RLS) |
+| Deployment | Vercel |
 
 ---
 
-## Disclaimer
-CANary is a screening tool and **not a diagnostic system**.  
-It is based on literature-derived and synthetic calibration and requires clinical validation.
+## ⚠️ Disclaimer
+
+CANary is a screening tool and **not a diagnostic system**.
+Requires clinical validation before any medical use.
 
 ---
 
-## Live Demo
-https://canary-scan-ai.vercel.app
+## 📚 References
+
+Debernardi, S. et al. (2020). A combination of urinary biomarkers 
+improves diagnosis of pancreatic cancer. PLOS Medicine, 17(4).
 
 ---
 
-## Author
-Druhi
+## 👩‍💻 Author
+Druhi — [canary-scan-ai.vercel.app](https://canary-scan-ai.vercel.app)
