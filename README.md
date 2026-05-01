@@ -55,6 +55,7 @@ User Input → React Frontend → ML API (Render) → Gradient Boosting → Risk
 ## ⚠️ Disclaimer
 
 CANary is a **screening tool only** — not a diagnostic system. All results require clinical validation by a qualified medical professional.
+This system is intended for research and educational exploration and has not been clinically validated.
 
 ---
 
