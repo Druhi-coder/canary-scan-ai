@@ -58,6 +58,15 @@ CANary is a **screening tool only** — not a diagnostic system. All results req
 
 ---
 
+## ⚠️ Limitations
+
+- Not clinically validated
+- Dataset size is limited
+- Potential bias in training data
+- Not intended for medical diagnosis
+  
+---
+
 ## 📚 References
 
 1. Debernardi, S. et al. (2020). A combination of urinary biomarkers improves diagnosis of pancreatic cancer. *PLOS Medicine*, 17(4).
