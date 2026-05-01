@@ -52,6 +52,19 @@ User Input → React Frontend → ML API (Render) → Gradient Boosting → Risk
 
 ---
 
+## 📊 Results
+
+### ROC Curve (Pancreatic Cancer Model)
+![ROC Curve](assets/roc_curve.png)
+
+### Feature Importance (SHAP - Pancreatic Model)
+![SHAP](assets/shap_summary.png)
+
+### Blood Severity Model Insights
+![CBC](assets/cbc_importance.png)
+
+---
+
 ## ⚠️ Disclaimer
 
 CANary is a **screening tool only** — not a diagnostic system. All results require clinical validation by a qualified medical professional.
