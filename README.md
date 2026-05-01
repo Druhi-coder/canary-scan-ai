@@ -63,6 +63,17 @@ User Input → React Frontend → ML API (Render) → Gradient Boosting → Risk
 ### Blood Severity Model Insights
 ![CBC](assets/cbc_importance.png)
 
+___
+
+## Research Positioning
+
+This project presents an early-stage AI-based screening support system built using clinical biomarker datasets. While the models demonstrate strong performance on available datasets (AUC ~0.98 for pancreatic cancer), the system is not clinically validated and relies partially on approximated inputs in real-world usage.
+
+Future work includes:
+- Validation on larger and more diverse clinical datasets
+- Integration of complete biomarker inputs
+- External benchmarking against established diagnostic models
+  
 ---
 
 ## ⚠️ Disclaimer
