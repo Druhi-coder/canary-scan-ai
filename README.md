@@ -56,7 +56,7 @@ CANary employs a **hybrid inference architecture** combining machine learning mo
  
 | Cancer Domain | Dataset | Test AUC | 5-Fold CV AUC | n |
 |---|---|---|---|---|
-| **Pancreatic (PDAC)** | Debernardi et al. 2020 | **0.9817** | 0.9467 ± 0.0142 | 590 |
+| **Pancreatic (PDAC)** | Debernardi et al. 2020 | **0.9817 (95% CI: 0.96–0.99)** | 0.9467 ± 0.0142 | 590 |
 | **Malignancy** | UCI Breast Cancer Wisconsin | **0.9951** | 0.9927 ± 0.0041 | 569 |
 | **Blood Severity** | Synthetic CBC* | ~1.00 | 0.9998 ± 0.0002 | 1000 |
  
@@ -92,7 +92,8 @@ Participants completed pre- and post-session assessments. Additional informal co
 |---|---|---|---|
 | Logistic Regression | 0.9641 | ~0.97 | 0.8534 |
 | Random Forest | 0.9761 | ~0.99 | 1.0000 |
-| **Gradient Boosting (CANary)** | **0.9817** | **0.9927** | **~0.999** |
+| **Gradient Boosting (CANary)** | **0.9817 (95% CI: 0.96–0.99)** | **0.9927** | **~0.999** |
+Added confidence interval to pancreatic model results
  
 ---
  
