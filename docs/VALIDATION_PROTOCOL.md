@@ -1,24 +1,37 @@
 # CANary System Validation Protocol (v1.0)
 
 ## Purpose
-This document defines the validation workflow for the CANary AI screening system, including security verification, risk calibration checks, and data persistence testing.
+
+This document defines the validation workflow for the CANary pancreatic cancer risk estimation system.  
+It includes model performance verification, explainability checks, and system-level testing.
 
 ---
 
-## System Status
+## Scope
 
-### Security Verification
-- Row Level Security (RLS) is enabled on the `assessments` table  
-- Policies implemented: SELECT, INSERT, UPDATE, DELETE  
-- All operations are scoped to `auth.uid() = user_id`  
-- Security scan warning regarding "No RLS Policies" is a false positive  
-- Database linter reports one minor issue (leaked password protection disabled), which is non-blocking  
+This protocol applies **only to the pancreatic cancer detection module**.  
+Other components of the broader CANary system are not included in this validation.
+
+---
+
+## Model Validation Summary
+
+- Dataset: Debernardi et al. (2020)
+- Task: Binary classification (Cancer vs No Cancer)
+- Model: Gradient Boosting Classifier
+
+### Performance Metrics
+- Test AUC-ROC: 0.9817  
+- 5-Fold CV AUC: 0.9467 ± 0.0142  
+- 95% Confidence Interval: 0.9556 – 0.9970 (bootstrap, 1,000 resamples)
 
 ---
 
 ## Prerequisites
-Authentication is required to test the full system workflow.  
-Ensure a valid user session is active before executing the test plan.
+
+- Valid user session (for full system testing)
+- Backend API accessible
+- Model deployed and reachable
 
 ---
 
@@ -26,50 +39,90 @@ Ensure a valid user session is active before executing the test plan.
 
 ### Step 1: Access Assessment Interface
 - Navigate to: **Start CANary Scan**
-- Confirm that the assessment form loads correctly
+- Confirm the form loads correctly
 
 ---
 
 ### Step 2: Input Test Data
-Use a high-risk synthetic profile:
 
-- **Demographics**: Age 62, Male, BMI ≈ 28  
-- **Risk Factors**: Current smoker, family history of cancer, diabetes  
-- **Symptoms**: Jaundice, blood in stool, unexplained weight loss  
-- **Lab Values** (if available): Elevated CA 19-9, low hemoglobin  
+Use a representative high-risk profile:
 
----
-
-### Step 3: Validate Risk Output
-- Confirm model outputs align with v2.0 literature-calibrated weights  
-
-Expected ranges:
-
-- **Pancreatic Cancer**: 40–55% (Medium–High)  
-  - Influenced by smoking (OR 1.74), diabetes (RR 1.82)  
-
-- **Colon Cancer**: 45–60% (Medium–High)  
-  - Influenced by smoking and family history (RR 2.24)  
-
-- **Blood Cancer**: 20–35% (Low–Medium)  
-  - Lower due to fewer direct contributing factors  
+- Age: ~60+
+- Sex: Male
+- Biomarkers:
+  - Elevated CA19-9
+  - Abnormal LYVE1 / REG1B / TFF1 values
 
 ---
 
-### Step 4: UI & Explainability Checks
-- Verify confidence levels are displayed with tooltip explanations  
-- Confirm "Evidence Base & References" renders all citations with DOI links  
-- Validate interpretability outputs (risk factors, protective factors)  
+### Step 3: Validate Model Output
+
+- Confirm output is a probability score between 0 and 1  
+- High-risk inputs should yield higher predicted probabilities  
+
+Expected behavior:
+- Elevated CA19-9 → strong positive influence  
+- Biomarker combinations → nonlinear risk increase  
 
 ---
 
-### Step 5: Data Persistence
-- Confirm assessment is stored in the database  
-- Navigate to **My Reports** and verify retrieval  
-- Ensure report consistency across sessions  
+### Step 4: Explainability Checks
+
+- SHAP explanations should:
+  - Highlight CA19-9 as primary contributor  
+  - Show LYVE1 and REG1B as secondary contributors  
+- Feature contributions should be directionally consistent with clinical understanding  
+
+---
+
+### Step 5: Calibration Check (Optional)
+
+- Compare predicted probabilities against actual outcomes (if test data available)
+- Ensure predictions are not systematically over- or under-confident
+
+---
+
+### Step 6: Data Persistence
+
+- Submit assessment
+- Confirm:
+  - Data is stored in Supabase
+  - Report is retrievable via "My Reports"
+  - No cross-user data leakage (RLS enforced)
+
+---
+
+## System-Level Validation
+
+### API Reliability
+- Ensure model API responds within acceptable latency
+- Validate fallback activation when API fails
+
+---
+
+### Fallback Behavior
+- When ML API is unavailable:
+  - System should switch to rule-based scoring
+  - Output should still provide interpretable risk indication
 
 ---
 
 ## Notes
-- Outputs represent screening-level risk estimates, not diagnostic conclusions  
-- Model performance is calibrated using synthetic and literature-derived distributions  
+
+- Outputs represent **screening-level risk estimates**, not diagnoses  
+- The model has **not been externally validated**  
+- Results should not be used for clinical decision-making  
+
+---
+
+## Limitations
+
+- Validation performed on a single dataset  
+- No independent cohort testing  
+- Real-world deployment data is not used for model evaluation  
+
+---
+
+## Summary
+
+This protocol ensures that the pancreatic cancer detection module operates correctly at both the model and system levels, while maintaining transparency, reliability, and appropriate scope of use.
