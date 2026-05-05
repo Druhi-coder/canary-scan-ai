@@ -95,6 +95,16 @@ Model predictions are interpreted using **SHAP (TreeExplainer)**:
 
 ---
 
+### Confusion Matrix — Test Set (n=118)
+![Confusion Matrix](assets/confusion_matrix.png)
+
+---
+
+### Calibration Curve — Before vs After Isotonic Calibration
+![Calibration Comparison](assets/calibration_comparison.png)
+
+___
+
 ## ⚙️ System Architecture
 
 CANary uses a **hybrid inference pipeline**:
