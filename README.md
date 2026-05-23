@@ -1,184 +1,141 @@
-# CANary — Cancer Anticipation Network for Risk Yield
-> CANary is a hybrid AI system for cancer risk estimation.  
-> This repository presents the **validated pancreatic cancer detection module**, achieving high performance using non-invasive urinary biomarkers.
 
-**Live App:** https://canary-scan-ai.vercel.app  
-**Research Notebook:** [`notebooks/canary_cancer_model.ipynb`](notebooks/canary_cancer_model.ipynb)
+# CANary
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-canary--scan--ai.vercel.app-green)](https://canary-scan-ai.vercel.app)
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](requirements.txt)
+> **Disclaimer**
+>
+> This project is intended solely for exploratory research and educational purposes and is not approved for clinical use, medical diagnosis, or treatment decision-making.
 
----
-
-## ⚠️ Disclaimer
-
-CANary is a **research prototype and screening tool — not a diagnostic system**.  
-All outputs require validation by qualified medical professionals.  
-The model has **not undergone external clinical validation** and is intended for research and educational use only.
+Exploratory interpretable machine learning framework for accessibility-oriented pancreatic cancer risk stratification using biomarker datasets and explainable AI.
 
 ---
 
-## 🧠 Overview
+## About the Project
 
-Early detection of pancreatic cancer is difficult due to late symptom onset and poor prognosis at advanced stages.  
-CANary addresses this by applying machine learning to biomarker data to estimate cancer risk in a non-invasive and interpretable manner.
+CANary is an independent exploratory computational medicine project investigating interpretable and accessibility-oriented machine learning approaches for pancreatic cancer risk stratification.
 
-While CANary is designed as a broader hybrid AI system,  
-**only the pancreatic cancer detection model is validated and evaluated in this repository**.
+The framework explores whether combinations of structured biomarker data, demographic variables, symptom context, and lifestyle indicators can contribute to interpretable exploratory risk-analysis workflows under controlled computational evaluation settings.
 
----
+The project prioritizes:
+- Explainable AI (XAI)
+- Accessibility-oriented healthcare systems
+- Transparency and interpretability
+- Responsible AI framing
+- Educational and research-oriented deployment
 
-## 📄 Research Preprint
-
-> **CANary: Machine Learning for Early Cancer Detection Using Urinary Biomarkers and Clinical Features**  
-> Druhi, May 2026  
-> [arXiv link — add after submission]
-
-Model metadata and full reproducibility details: [`docs/MODEL.md`](docs/MODEL.md)
+CANary does not claim clinical diagnostic validity and should not be interpreted as a replacement for clinicians, laboratory diagnostics, or hospital-grade screening systems.
 
 ---
 
-## 🧬 Pancreatic Cancer Model
+## Research Direction
 
-- **Dataset:** Debernardi et al. (2020), *PLOS Medicine*  
-- **Samples:** 590 patients  
-- **Task:** Binary classification (Cancer vs No Cancer)  
-- **Model:** Gradient Boosting (scikit-learn)  
-- **Hyperparameters:** `n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42`
+The long-term direction of CANary focuses on:
 
-### Performance
+- Explainable healthcare AI
+- Accessibility-oriented computational medicine
+- Low-resource healthcare systems
+- Interpretable machine learning
+- Educational healthcare technology
+- Risk-awareness and decision-support research
 
-| Metric | Value |
-|---|---|
-| Test AUC-ROC | **0.9817** |
-| 5-Fold CV AUC | 0.9467 ± 0.0142 |
-| 95% CI (Bootstrap, n=1000) | **0.9556 – 0.9970** |
-| Sensitivity | **0.95** |
-| Specificity | **1.00** |
-| Accuracy | **0.983** |
+The project emphasizes transparency, interpretability, and responsible AI system design over black-box prediction systems.
 
 ---
 
-## 🔬 Confusion Matrix — Test Set (n=118)
+## Dataset Sources
 
-|  | Predicted: No Cancer | Predicted: Cancer |
-|---|---|---|
-| **Actual: No Cancer** | 78 (TN) | 0 (FP) |
-| **Actual: Cancer** | 2 (FN) | 38 (TP) |
+Current experimentation utilizes publicly available structured biomarker and clinical datasets related to pancreatic cancer research.
 
-Zero false positives across 78 non-cancer cases.  
-2 false negatives out of 40 cancer cases (sensitivity = 0.95).
+Exploratory features include:
+- CA 19-9
+- CEA
+- CBC-related indicators
+- Demographic variables
+- Symptom-duration context
+- Lifestyle indicators
+- Family cancer history
 
----
+Example literature and dataset context include:
+- Debernardi et al. pancreatic biomarker research
+- Public biomarker datasets from oncology research repositories
+- Structured exploratory preprocessing workflows
 
-## 🔬 Explainability
-
-Model predictions are interpreted using **SHAP (TreeExplainer)**:
-
-- **CA19-9** → strongest predictor (importance: 0.5345)  
-- **LYVE1** → second most important (importance: 0.2486)  
-- **Creatinine** → moderate contribution (0.0643)  
-- **TFF1, Age, REG1B, REG1A** → lower but non-zero contributions  
-- **Sex** → minimal predictive impact (0.0049)
+Current experiments are limited by public dataset availability, dataset imbalance, and lack of prospective clinical validation.
 
 ---
 
-## 📊 Results
+## Methodology Overview
 
-### ROC Curve — Pancreatic Cancer Detection
-![ROC Curve](assets/roc_curve.png)
+The framework currently explores:
+- Gradient Boosting
+- Random Forests
+- Logistic Regression
+- Ensemble learning workflows
+- SHAP-based explainability analysis
 
----
+Preprocessing workflows currently include:
+- Missing-value imputation
+- Feature normalization
+- Binary categorical encoding
+- Cross-validation analysis
+- Exploratory calibration workflows
 
-### SHAP Summary — Biomarker Attribution
-![SHAP Summary](assets/shap_summary.png)
-
----
-
-### Confusion Matrix — Test Set (n=118)
-![Confusion Matrix](assets/confusion_matrix.png)
-
----
-
-### Calibration Curve — Before vs After Isotonic Calibration
-![Calibration Comparison](assets/calibration_comparison.png)
-
-___
-
-## ⚙️ System Architecture
-
-CANary uses a **hybrid inference pipeline**:
-
-1. User inputs biomarker data via frontend  
-2. Data is processed by ML API (Gradient Boosting model)  
-3. SHAP explanations provide interpretability  
-4. Fallback logic ensures system reliability  
-
-### Components
-
-- **Frontend:** React + TypeScript  
-- **ML Backend:** Flask API (Render)  
-- **Database:** Supabase (RLS-enabled)  
-- **Explainability:** SHAP  
-
-📄 Full architecture → [`docs/research/ARCHITECTURE.md`](docs/research/ARCHITECTURE.md)
+Current evaluation remains exploratory and computational only.
 
 ---
 
-## 🌍 Real-World Context — DRiSe Initiative
+## Current Limitations
 
-The system design was informed by facilitator-led outreach through the **DRiSe initiative** in Udaipur, Rajasthan.
+Several important limitations currently constrain the framework:
 
-| Metric | Value |
-|---|---|
-| Participants engaged | 5,382 |
-| Total assessments | 10,836 |
-| Setting | Community-based, non-clinical |
-| Medical follow-ups | ~12–13 |
+- No clinical validation has been performed
+- Public datasets may introduce demographic and sampling bias
+- Generalizability across populations remains uncertain
+- Evaluation remains exploratory and computational only
+- The framework is not approved for clinical deployment
+- Limited dataset scale may increase overfitting risk
+- No hospital partnerships or prospective trials currently exist
 
-> Outreach data was retained in aggregated form only and **was not used for model training or statistical validation**.
-
----
-
-## 🔁 Reproducibility
-
-To reproduce results:
-
-```
-pip install -r requirements.txt
-```
-
-Then run:
-
-```
-notebooks/canary_cancer_model.ipynb
-```
-
-📄 Full details → [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md)
+The project is therefore positioned strictly as an exploratory research-oriented computational framework.
 
 ---
 
-## ⚠️ Limitations
+## Visualizations
 
-- Dataset size is limited (n = 590)  
-- No external validation on independent cohorts  
-- Potential dataset-specific bias  
-- Not suitable for clinical decision-making  
-- REG1A had 48.1% missing values (284/590), imputed with column median — may suppress its true predictive signal  
-- Model probability outputs are not well-calibrated; predicted scores should not be interpreted as absolute risk estimates without further validation on larger cohorts
+### System Architecture
+Upload:
+- architecture.png
+
+### ROC Curve
+Upload:
+- roc_curve.png
+
+### SHAP Analysis
+Upload:
+- shap_analysis.png
+
+### Interface Preview
+Optional:
+- interface.png
 
 ---
 
-## 📚 References
+## Code Availability
 
-1. Debernardi, S. et al. (2020). *A combination of urinary biomarkers improves diagnosis of pancreatic cancer*. PLOS Medicine. https://doi.org/10.1371/journal.pmed.1003489  
-2. Lundberg, S. M., & Lee, S. I. (2017). *A unified approach to interpreting model predictions*. Advances in Neural Information Processing Systems, 30, 4765–4774.  
-3. Pedregosa, F. et al. (2011). *Scikit-learn: Machine learning in Python*. JMLR, 12, 2825–2830.
+Prototype implementation and ongoing experimentation materials are available through the project repository:
+
+https://github.com/Druhi-coder/canary-scan-ai
 
 ---
 
-## 👩‍💻 Author
+## Author
 
 **Druhi Sarupria**  
-Independent Researcher  
-Udaipur, Rajasthan, India
+Independent Researcher · Rajasthan, India  
+Healthcare AI · Explainable AI · Accessibility-Oriented Computational Medicine
+
+---
+
+## Citation
+
+If referencing this exploratory framework, please cite appropriately as independent exploratory computational medicine research.
+
