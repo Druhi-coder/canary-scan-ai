@@ -38,6 +38,13 @@ this project asks a different question:
 
 That question defines every design decision throughout this repository.
 
+# Access
+
+The interactive web application can be accessed here:
+
+**https://canary-scan-ai.vercel.app**
+
+The complete research methodology, preprocessing pipeline, model training, statistical evaluation, and explainability analysis are available in the accompanying Jupyter notebook contained in this repository.
 ---
 
 # Philosophy
@@ -280,6 +287,13 @@ Research interests include:
 - Healthcare Innovation
 
 ---
+# Dataset
+
+CANary was developed using the publicly available urinary biomarker dataset introduced by Debernardi et al.
+
+The dataset consists of 590 participants and includes urinary biomarkers together with clinical variables for pancreatic cancer risk stratification.
+
+Please refer to the original publication for dataset details, licensing, and clinical methodology.
 
 # Acknowledgements
 
