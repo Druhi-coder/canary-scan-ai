@@ -103,7 +103,7 @@ The repository includes:
 
 - Complete Jupyter Notebook implementation
 - Machine learning pipeline
-- Hyperparameter optimisation
+- GridSearchCV hyperparameter optimisation
 - SHAP explainability
 - Statistical evaluation
 - Calibration analysis
