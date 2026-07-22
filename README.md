@@ -40,7 +40,7 @@ That question defines every design decision throughout this repository.
 
 # Access
 
-The interactive web application can be accessed here:
+An interactive research demonstration is available here:
 
 **https://canary-scan-ai.vercel.app**
 
@@ -163,15 +163,15 @@ The final Gradient Boosting model demonstrated strong predictive performance on 
 
 | Metric | Performance |
 |---------|------------:|
-| ROC-AUC | **0.9843** |
-| PR-AUC | **0.9744** |
+| ROC-AUC | **0.9814** |
+| PR-AUC | **0.9707** |
 | Sensitivity | **0.9000** |
 | Specificity | **0.9487** |
 | Precision | **0.9000** |
 | F1 Score | **0.9000** |
 | MCC | **0.8487** |
 | Balanced Accuracy | **0.9244** |
-| Brier Score | **0.0492** |
+| Brier Score | **0.0499** |
 
 These metrics should be interpreted within the context of the dataset used for experimentation and should not be considered evidence of clinical effectiveness.
 
@@ -287,13 +287,33 @@ Research interests include:
 - Healthcare Innovation
 
 ---
+
 # Dataset
 
-CANary was developed using the publicly available urinary biomarker dataset introduced by Debernardi et al.
+CANary was developed using the publicly available urinary biomarker dataset introduced by Debernardi et al. (2020).
 
-The dataset consists of 590 participants and includes urinary biomarkers together with clinical variables for pancreatic cancer risk stratification.
+Dataset summary:
 
-Please refer to the original publication for dataset details, licensing, and clinical methodology.
+- Participants: 590
+- Positive (PDAC): 199
+- Negative (Healthy + Benign): 391
+
+Features used:
+
+- Age
+- Sex
+- Plasma CA19-9
+- Creatinine
+- LYVE1
+- REG1B
+- TFF1
+- REG1A
+
+The dataset was split using an 80:20 stratified train-test split. Missing values were imputed using the median calculated from the training data only to prevent data leakage.
+
+Please refer to the original publication for complete dataset documentation, licensing information, and clinical methodology.
+
+___
 
 # Acknowledgements
 
