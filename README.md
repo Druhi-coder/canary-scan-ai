@@ -38,14 +38,40 @@ this project asks a different question:
 
 That question defines every design decision throughout this repository.
 
-# Access
+# Live Demonstration
 
 An interactive research demonstration is available here:
 
 **https://canary-scan-ai.vercel.app**
 
 The complete research methodology, preprocessing pipeline, model training, statistical evaluation, and explainability analysis are available in the accompanying Jupyter notebook contained in this repository.
+
 ---
+
+# Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Druhi-coder/CANary.git
+cd CANary
+```
+
+Install the required dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Launch Jupyter Notebook:
+
+```bash
+jupyter notebook
+```
+
+Open the provided notebook and execute the cells sequentially to reproduce the reported experiments.
+
+___
 
 # Philosophy
 
@@ -115,6 +141,45 @@ The repository includes:
 Everything required to reproduce the reported experiments is contained within this repository.
 
 ---
+
+# Repository Structure
+
+```text
+CANary/
+│
+├── notebook.ipynb                 # Complete research notebook
+├── research_paper.pdf             # Research manuscript
+├── assets/
+│   ├── roc_curve.png
+│   ├── calibration_comparison.png
+│   ├── confusion_matrix.png
+│   └── shap_summary.png
+├── requirements.txt               # Python dependencies
+├── README.md
+└── LICENSE
+```
+
+This repository contains all code, figures, and documentation necessary to reproduce the computational experiments reported in the accompanying research manuscript.
+
+___
+
+# Software Environment
+
+The computational experiments were developed using Python within Google Colab.
+
+Primary libraries include:
+
+- Python 3
+- Scikit-learn
+- NumPy
+- Pandas
+- Matplotlib
+- SHAP
+- Joblib
+- Jupyter Notebook / Google Colab
+
+All reported experiments can be reproduced using the accompanying notebook and the dependencies listed in `requirements.txt`.
+___
 
 # Methodology
 
@@ -309,7 +374,13 @@ Features used:
 - TFF1
 - REG1A
 
-The dataset was split using an 80:20 stratified train-test split. Missing values were imputed using the median calculated from the training data only to prevent data leakage.
+The dataset used in this study is publicly available and was originally introduced by:
+
+**Debernardi, S., et al. (2020).**
+
+If you wish to reproduce the experiments exactly as described in the manuscript, please obtain the dataset from the original publication:
+
+https://doi.org/10.1371/journal.pmed.1003489
 
 Please refer to the original publication for complete dataset documentation, licensing information, and clinical methodology.
 
