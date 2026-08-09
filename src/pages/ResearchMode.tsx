@@ -259,13 +259,20 @@ const ResearchMode = () => {
       .slice(0, 10);
 
     setStats({
-      totalScans,
-      avgAge: Math.round(avgAge),
-      genderDist,
-      riskDistribution: riskDist,
-      commonSymptoms,
-    });
-  }, []);
+        totalScans,
+        avgAge: Math.round(avgAge),
+        genderDist,
+        riskDistribution: riskDist,
+        commonSymptoms,
+      });
+    } catch (error) {
+      console.error("Unexpected Research Mode error:", error);
+    }
+  };
+
+  loadResearchData();
+}, []);
+
 
   const riskChartData = [
     {
