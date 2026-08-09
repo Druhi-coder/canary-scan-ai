@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, BarChart3, Users, TrendingUp, Activity } from "lucide-react";
-import { getReports } from "@/lib/storage";
+import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const ResearchMode = () => {
@@ -21,41 +21,197 @@ const ResearchMode = () => {
   });
 
   useEffect(() => {
-    const reports = getReports();
-    
-    if (reports.length === 0) {
-      setStats({
-        totalScans: 0,
-        avgAge: 0,
-        genderDist: { male: 0, female: 0, other: 0 },
-        riskDistribution: {
-          pancreatic: { low: 0, medium: 0, high: 0 },
-          colon: { low: 0, medium: 0, high: 0 },
-          blood: { low: 0, medium: 0, high: 0 },
-        },
-        commonSymptoms: [],
+  const loadResearchData = async () => {
+    try {
+      const { data: reports, error } = await supabase
+        .from("reports")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error loading research reports:", error);
+        return;
+      }
+
+      if (!reports || reports.length === 0) {
+        setStats({
+          totalScans: 0,
+          avgAge: 0,
+          genderDist: { male: 0, female: 0, other: 0 },
+          riskDistribution: {
+            pancreatic: { low: 0, medium: 0, high: 0 },
+            colon: { low: 0, medium: 0, high: 0 },
+            blood: { low: 0, medium: 0, high: 0 },
+          },
+          commonSymptoms: [],
+        });
+        return;
+      }
+
+      console.log("Research Mode loaded reports:", reports.length);
+
+      const totalScans = reports.length;
+
+      // Convert Supabase reports into the format used by Research Mode
+      const normalizedReports = reports.map((report: any) => {
+        const inputData = report.input_data || {};
+        const result = report.result || "";
+
+        const riskParts = result
+          .split("/")
+          .map((value: string) => value.trim().toLowerCase());
+
+        return {
+          formData: inputData,
+          predictions: {
+            pancreatic: {
+              probability:
+                riskParts[0] === "high"
+                  ? 0.8
+                  : riskParts[0] === "medium"
+                    ? 0.5
+                    : 0.1,
+            },
+            colon: {
+              probability:
+                riskParts[1] === "high"
+                  ? 0.8
+                  : riskParts[1] === "medium"
+                    ? 0.5
+                    : 0.1,
+            },
+            blood: {
+              probability:
+                riskParts[2] === "high"
+                  ? 0.8
+                  : riskParts[2] === "medium"
+                    ? 0.5
+                    : 0.1,
+            },
+          },
+        };
       });
-      return;
+
+      // Age
+      const ages = normalizedReports
+        .map((r: any) => parseInt(r.formData.age))
+        .filter((age: number) => !isNaN(age));
+
+      const avgAge =
+        ages.length > 0
+          ? ages.reduce((a: number, b: number) => a + b, 0) / ages.length
+          : 0;
+
+      // Gender
+      const genderDist = {
+        male: 0,
+        female: 0,
+        other: 0,
+      };
+
+      normalizedReports.forEach((r: any) => {
+        const gender = String(r.formData.gender || "").toLowerCase();
+
+        if (gender === "male") {
+          genderDist.male++;
+        } else if (gender === "female") {
+          genderDist.female++;
+        } else {
+          genderDist.other++;
+        }
+      });
+
+      // Risk distribution
+      const riskDist = {
+        pancreatic: { low: 0, medium: 0, high: 0 },
+        colon: { low: 0, medium: 0, high: 0 },
+        blood: { low: 0, medium: 0, high: 0 },
+      };
+
+      normalizedReports.forEach((r: any) => {
+        const pancreatic = r.predictions.pancreatic.probability;
+        const colon = r.predictions.colon.probability;
+        const blood = r.predictions.blood.probability;
+
+        if (pancreatic < 0.3) {
+          riskDist.pancreatic.low++;
+        } else if (pancreatic < 0.6) {
+          riskDist.pancreatic.medium++;
+        } else {
+          riskDist.pancreatic.high++;
+        }
+
+        if (colon < 0.3) {
+          riskDist.colon.low++;
+        } else if (colon < 0.6) {
+          riskDist.colon.medium++;
+        } else {
+          riskDist.colon.high++;
+        }
+
+        if (blood < 0.3) {
+          riskDist.blood.low++;
+        } else if (blood < 0.6) {
+          riskDist.blood.medium++;
+        } else {
+          riskDist.blood.high++;
+        }
+      });
+
+      // Common symptoms
+      const symptomCounts: Record<string, number> = {};
+
+      const symptomFields = [
+        "fatigue",
+        "weightLoss",
+        "jaundice",
+        "abdominalPain",
+        "bloodInStool",
+        "nausea",
+        "paleSkin",
+        "bruising",
+        "backPain",
+        "infections",
+        "swollenLymphNodes",
+      ];
+
+      normalizedReports.forEach((r: any) => {
+        symptomFields.forEach((field) => {
+          if (r.formData[field]) {
+            const readableName = field
+              .replace(/([A-Z])/g, " $1")
+              .trim();
+
+            const capitalizedName =
+              readableName.charAt(0).toUpperCase() +
+              readableName.slice(1);
+
+            symptomCounts[capitalizedName] =
+              (symptomCounts[capitalizedName] || 0) + 1;
+          }
+        });
+      });
+
+      const commonSymptoms = Object.entries(symptomCounts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      setStats({
+        totalScans,
+        avgAge: Math.round(avgAge),
+        genderDist,
+        riskDistribution: riskDist,
+        commonSymptoms,
+      });
+    } catch (error) {
+      console.error("Unexpected Research Mode error:", error);
     }
+  };
 
-    // Calculate statistics
-    const totalScans = reports.length;
-    
-    // Age calculation
-    const ages = reports
-      .map(r => parseInt(r.formData.age))
-      .filter(age => !isNaN(age));
-    const avgAge = ages.length > 0 ? ages.reduce((a, b) => a + b, 0) / ages.length : 0;
-
-    // Gender distribution
-    const genderDist = { male: 0, female: 0, other: 0 };
-    reports.forEach(r => {
-      const gender = r.formData.gender;
-      if (gender === "male") genderDist.male++;
-      else if (gender === "female") genderDist.female++;
-      else genderDist.other++;
-    });
-
+  loadResearchData();
+}, []);
+  
     // Risk distribution
     const riskDist = {
       pancreatic: { low: 0, medium: 0, high: 0 },
