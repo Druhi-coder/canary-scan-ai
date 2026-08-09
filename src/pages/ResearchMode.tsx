@@ -25,75 +25,54 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 
 type RiskLevel = "low" | "medium" | "high";
 
+interface RiskDistribution {
+  low: number;
+  medium: number;
+  high: number;
+}
+
 interface ResearchStats {
   totalScans: number;
   avgAge: number;
-  genderDist: {
-    male: number;
-    female: number;
-    other: number;
+  riskDistribution: {
+    pancreatic: RiskDistribution;
+    colon: RiskDistribution;
+    blood: RiskDistribution;
   };
+  mostCommonSymptom: string;
+}
+
+const EMPTY_STATS: ResearchStats = {
+  totalScans: 0,
+  avgAge: 0,
   riskDistribution: {
     pancreatic: {
-      low: number;
-      medium: number;
-      high: number;
-    };
+      low: 0,
+      medium: 0,
+      high: 0,
+    },
     colon: {
-      low: number;
-      medium: number;
-      high: number;
-    };
+      low: 0,
+      medium: 0,
+      high: 0,
+    },
     blood: {
-      low: number;
-      medium: number;
-      high: number;
-    };
-  };
-  commonSymptoms: {
-    name: string;
-    count: number;
-  }[];
-}
+      low: 0,
+      medium: 0,
+      high: 0,
+    },
+  },
+  mostCommonSymptom: "N/A",
+};
 
 const ResearchMode = () => {
   const navigate = useNavigate();
 
-  const [stats, setStats] = useState<ResearchStats>({
-    totalScans: 0,
-    avgAge: 0,
-    genderDist: {
-      male: 0,
-      female: 0,
-      other: 0,
-    },
-    riskDistribution: {
-      pancreatic: {
-        low: 0,
-        medium: 0,
-        high: 0,
-      },
-      colon: {
-        low: 0,
-        medium: 0,
-        high: 0,
-      },
-      blood: {
-        low: 0,
-        medium: 0,
-        high: 0,
-      },
-    },
-    commonSymptoms: [],
-  });
-
+  const [stats, setStats] = useState<ResearchStats>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -103,371 +82,132 @@ const ResearchMode = () => {
         setLoading(true);
         setErrorMessage("");
 
-        const { data: reports, error } = await supabase
-          .from("reports")
-          .select("*")
-          .order("created_at", { ascending: false });
+        /*
+         * IMPORTANT:
+         *
+         * Do NOT query the reports table directly here.
+         *
+         * The reports table has RLS policies that allow users
+         * to see only their own reports.
+         *
+         * Research Mode needs the anonymized aggregate data
+         * returned by the SECURITY DEFINER RPC function.
+         */
+
+        const { data, error } = await supabase.rpc(
+          "get_research_summary"
+        );
 
         if (error) {
-          console.error("Error loading research reports:", error);
+          console.error(
+            "Error loading research summary:",
+            error
+          );
+
           setErrorMessage(
             "Unable to load research data. Please try again later."
           );
-          return;
-        }
-
-        if (!reports || reports.length === 0) {
-          setStats({
-            totalScans: 0,
-            avgAge: 0,
-            genderDist: {
-              male: 0,
-              female: 0,
-              other: 0,
-            },
-            riskDistribution: {
-              pancreatic: {
-                low: 0,
-                medium: 0,
-                high: 0,
-              },
-              colon: {
-                low: 0,
-                medium: 0,
-                high: 0,
-              },
-              blood: {
-                low: 0,
-                medium: 0,
-                high: 0,
-              },
-            },
-            commonSymptoms: [],
-          });
 
           return;
         }
 
         console.log(
-          "Research Mode loaded reports:",
-          reports.length
+          "Research Mode RPC response:",
+          data
         );
 
-        const totalScans = reports.length;
+        if (!data) {
+          setStats(EMPTY_STATS);
+          return;
+        }
 
         /*
-         * Normalize the Supabase report data.
+         * Depending on how the PostgreSQL function is declared,
+         * Supabase can return either:
          *
-         * The current reports table stores:
-         * - input_data
-         * - result
+         * 1. an object
+         * 2. an array containing one object
          *
-         * Older Research Mode code expected:
-         * - formData
-         * - predictions
-         *
-         * This conversion lets the existing dashboard work
-         * with the Supabase reports.
+         * Handle both safely.
          */
 
-        const normalizedReports = reports.map((report: any) => {
-          let inputData = report.input_data || {};
+        const rawData: any = Array.isArray(data)
+          ? data[0]
+          : data;
 
-          if (typeof inputData === "string") {
-            try {
-              inputData = JSON.parse(inputData);
-            } catch {
-              inputData = {};
-            }
-          }
+        if (!rawData) {
+          setStats(EMPTY_STATS);
+          return;
+        }
 
-          const result = report.result ?? "";
+        /*
+         * The RPC currently returns:
+         *
+         * {
+         *   averageAge: 26.3,
+         *   riskDistribution: {
+         *     blood: { low: 31, medium: 4, high: 0 },
+         *     colon: { low: 33, medium: 2, high: 0 },
+         *     pancreatic: { low: 32, medium: 3, high: 0 }
+         *   },
+         *   totalAssessments: 38,
+         *   mostCommonSymptom: "Constipation"
+         * }
+         */
 
-          let resultValues: string[] = [];
+        const riskDistribution =
+          rawData.riskDistribution || {};
 
-          if (typeof result === "string") {
-            resultValues = result
-              .split("/")
-              .map((value: string) => value.trim().toLowerCase());
-          } else if (Array.isArray(result)) {
-            resultValues = result.map((value: any) =>
-              String(value).trim().toLowerCase()
-            );
-          }
+        const pancreatic =
+          riskDistribution.pancreatic || {};
 
-          const getRiskLevel = (
-            index: number
-          ): RiskLevel => {
-            const value = resultValues[index];
+        const colon =
+          riskDistribution.colon || {};
 
-            if (value === "high") {
-              return "high";
-            }
+        const blood =
+          riskDistribution.blood || {};
 
-            if (value === "medium") {
-              return "medium";
-            }
+        const researchStats: ResearchStats = {
+          totalScans:
+            Number(rawData.totalAssessments) || 0,
 
-            return "low";
-          };
+          /*
+           * Keep one decimal place because the RPC
+           * returns 26.3 rather than an integer.
+           */
+          avgAge:
+            Number(rawData.averageAge) || 0,
 
-          const riskToProbability = (
-            level: RiskLevel
-          ): number => {
-            if (level === "high") {
-              return 0.8;
-            }
-
-            if (level === "medium") {
-              return 0.5;
-            }
-
-            return 0.1;
-          };
-
-          const pancreaticRisk = getRiskLevel(0);
-          const colonRisk = getRiskLevel(1);
-          const bloodRisk = getRiskLevel(2);
-
-          return {
-            formData: inputData,
-
-            predictions: {
-              pancreatic: {
-                probability:
-                  riskToProbability(pancreaticRisk),
-              },
-
-              colon: {
-                probability:
-                  riskToProbability(colonRisk),
-              },
-
-              blood: {
-                probability:
-                  riskToProbability(bloodRisk),
-              },
+          riskDistribution: {
+            pancreatic: {
+              low: Number(pancreatic.low) || 0,
+              medium: Number(pancreatic.medium) || 0,
+              high: Number(pancreatic.high) || 0,
             },
-          };
-        });
 
-        /*
-         * AGE
-         */
+            colon: {
+              low: Number(colon.low) || 0,
+              medium: Number(colon.medium) || 0,
+              high: Number(colon.high) || 0,
+            },
 
-        const ages = normalizedReports
-          .map((report: any) => {
-            const age = report.formData?.age;
+            blood: {
+              low: Number(blood.low) || 0,
+              medium: Number(blood.medium) || 0,
+              high: Number(blood.high) || 0,
+            },
+          },
 
-            if (typeof age === "number") {
-              return age;
-            }
-
-            if (typeof age === "string") {
-              const parsed = parseInt(age, 10);
-
-              return isNaN(parsed) ? null : parsed;
-            }
-
-            return null;
-          })
-          .filter(
-            (age: number | null): age is number =>
-              age !== null &&
-              age >= 0 &&
-              age <= 120
-          );
-
-        const avgAge =
-          ages.length > 0
-            ? ages.reduce(
-                (sum: number, age: number) =>
-                  sum + age,
-                0
-              ) / ages.length
-            : 0;
-
-        /*
-         * GENDER
-         */
-
-        const genderDist = {
-          male: 0,
-          female: 0,
-          other: 0,
+          mostCommonSymptom:
+            rawData.mostCommonSymptom || "N/A",
         };
 
-        normalizedReports.forEach((report: any) => {
-          const gender = String(
-            report.formData?.gender || ""
-          )
-            .trim()
-            .toLowerCase();
+        console.log(
+          "Processed Research Mode statistics:",
+          researchStats
+        );
 
-          if (
-            gender === "male" ||
-            gender === "m" ||
-            gender === "man"
-          ) {
-            genderDist.male++;
-          } else if (
-            gender === "female" ||
-            gender === "f" ||
-            gender === "woman"
-          ) {
-            genderDist.female++;
-          } else {
-            genderDist.other++;
-          }
-        });
-
-        /*
-         * RISK DISTRIBUTION
-         */
-
-        const riskDist = {
-          pancreatic: {
-            low: 0,
-            medium: 0,
-            high: 0,
-          },
-
-          colon: {
-            low: 0,
-            medium: 0,
-            high: 0,
-          },
-
-          blood: {
-            low: 0,
-            medium: 0,
-            high: 0,
-          },
-        };
-
-        normalizedReports.forEach((report: any) => {
-          const pancreatic =
-            report.predictions.pancreatic.probability;
-
-          const colon =
-            report.predictions.colon.probability;
-
-          const blood =
-            report.predictions.blood.probability;
-
-          /*
-           * Pancreatic
-           */
-
-          if (pancreatic < 0.3) {
-            riskDist.pancreatic.low++;
-          } else if (pancreatic < 0.6) {
-            riskDist.pancreatic.medium++;
-          } else {
-            riskDist.pancreatic.high++;
-          }
-
-          /*
-           * Colon
-           */
-
-          if (colon < 0.3) {
-            riskDist.colon.low++;
-          } else if (colon < 0.6) {
-            riskDist.colon.medium++;
-          } else {
-            riskDist.colon.high++;
-          }
-
-          /*
-           * Blood
-           */
-
-          if (blood < 0.3) {
-            riskDist.blood.low++;
-          } else if (blood < 0.6) {
-            riskDist.blood.medium++;
-          } else {
-            riskDist.blood.high++;
-          }
-        });
-
-        /*
-         * COMMON SYMPTOMS
-         */
-
-        const symptomCounts: Record<
-          string,
-          number
-        > = {};
-
-        const symptomFields = [
-          "fatigue",
-          "weightLoss",
-          "jaundice",
-          "abdominalPain",
-          "bloodInStool",
-          "nausea",
-          "paleSkin",
-          "bruising",
-          "backPain",
-          "infections",
-          "swollenLymphNodes",
-        ];
-
-        normalizedReports.forEach((report: any) => {
-          const formData = report.formData || {};
-
-          symptomFields.forEach((field) => {
-            const value = formData[field];
-
-            /*
-             * Only count symptoms that are actually
-             * marked as present.
-             */
-            if (
-              value === true ||
-              value === "true" ||
-              value === "yes" ||
-              value === "Yes" ||
-              value === 1
-            ) {
-              const readableName = field
-                .replace(/([A-Z])/g, " $1")
-                .trim();
-
-              const capitalizedName =
-                readableName.charAt(0).toUpperCase() +
-                readableName.slice(1);
-
-              symptomCounts[capitalizedName] =
-                (symptomCounts[capitalizedName] || 0) +
-                1;
-            }
-          });
-        });
-
-        const commonSymptoms = Object.entries(
-          symptomCounts
-        )
-          .map(([name, count]) => ({
-            name,
-            count,
-          }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 10);
-
-        /*
-         * SAVE ALL STATISTICS
-         */
-
-        setStats({
-          totalScans,
-          avgAge: Math.round(avgAge),
-          genderDist,
-          riskDistribution: riskDist,
-          commonSymptoms,
-        });
+        setStats(researchStats);
       } catch (error) {
         console.error(
           "Unexpected Research Mode error:",
@@ -502,43 +242,20 @@ const ResearchMode = () => {
     {
       name: "Colon",
       Low: stats.riskDistribution.colon.low,
-      Medium: stats.riskDistribution.colon.medium,
-      High: stats.riskDistribution.colon.high,
+      Medium:
+        stats.riskDistribution.colon.medium,
+      High:
+        stats.riskDistribution.colon.high,
     },
 
     {
       name: "Blood",
       Low: stats.riskDistribution.blood.low,
-      Medium: stats.riskDistribution.blood.medium,
-      High: stats.riskDistribution.blood.high,
+      Medium:
+        stats.riskDistribution.blood.medium,
+      High:
+        stats.riskDistribution.blood.high,
     },
-  ];
-
-  /*
-   * GENDER CHART
-   */
-
-  const genderChartData = [
-    {
-      name: "Male",
-      value: stats.genderDist.male,
-    },
-
-    {
-      name: "Female",
-      value: stats.genderDist.female,
-    },
-
-    {
-      name: "Other",
-      value: stats.genderDist.other,
-    },
-  ].filter((item) => item.value > 0);
-
-  const GENDER_COLORS = [
-    "hsl(var(--medical-blue))",
-    "hsl(var(--warning-yellow))",
-    "hsl(var(--success-green))",
   ];
 
   /*
@@ -624,6 +341,10 @@ const ResearchMode = () => {
     );
   }
 
+  /*
+   * MAIN RESEARCH DASHBOARD
+   */
+
   return (
     <div className="min-h-screen bg-background pb-16">
       <header className="border-b border-border bg-card sticky top-0 z-50">
@@ -675,7 +396,7 @@ const ResearchMode = () => {
           </Card>
         ) : (
           <div className="space-y-6">
-            {/* Overview Stats */}
+            {/* OVERVIEW STATS */}
 
             <div className="grid md:grid-cols-3 gap-6">
               <Card>
@@ -718,16 +439,13 @@ const ResearchMode = () => {
 
                 <CardContent>
                   <p className="text-3xl font-bold">
-                    {stats.commonSymptoms.length >
-                    0
-                      ? stats.commonSymptoms[0].name
-                      : "N/A"}
+                    {stats.mostCommonSymptom}
                   </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Risk Distribution */}
+            {/* RISK DISTRIBUTION */}
 
             <Card>
               <CardHeader>
@@ -744,7 +462,7 @@ const ResearchMode = () => {
               <CardContent>
                 <ResponsiveContainer
                   width="100%"
-                  height={300}
+                  height={350}
                 >
                   <BarChart data={riskChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -776,108 +494,45 @@ const ResearchMode = () => {
               </CardContent>
             </Card>
 
-            {/* Gender Distribution */}
+            {/* RESEARCH DATA NOTE */}
 
-            {genderChartData.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    Gender Distribution
-                  </CardTitle>
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  Research Dataset
+                </CardTitle>
 
-                  <CardDescription>
-                    Demographics of assessed
-                    individuals
-                  </CardDescription>
-                </CardHeader>
+                <CardDescription>
+                  Aggregate statistics generated from
+                  anonymized CANary assessments.
+                </CardDescription>
+              </CardHeader>
 
-                <CardContent>
-                  <ResponsiveContainer
-                    width="100%"
-                    height={300}
-                  >
-                    <PieChart>
-                      <Pie
-                        data={genderChartData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, value }) =>
-                          `${name}: ${value}`
-                        }
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {genderChartData.map(
-                          (entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={
-                                GENDER_COLORS[
-                                  index %
-                                    GENDER_COLORS.length
-                                ]
-                              }
-                            />
-                          )
-                        )}
-                      </Pie>
+              <CardContent>
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p>
+                    Total assessments included:{" "}
+                    <strong className="text-foreground">
+                      {stats.totalScans}
+                    </strong>
+                  </p>
 
-                      <Tooltip />
+                  <p>
+                    Average participant age:{" "}
+                    <strong className="text-foreground">
+                      {stats.avgAge}
+                    </strong>
+                  </p>
 
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Common Symptoms */}
-
-            {stats.commonSymptoms.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    Most Reported Symptoms
-                  </CardTitle>
-
-                  <CardDescription>
-                    Frequency of symptoms across
-                    all assessments
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent>
-                  <ResponsiveContainer
-                    width="100%"
-                    height={300}
-                  >
-                    <BarChart
-                      data={stats.commonSymptoms}
-                      layout="vertical"
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-
-                      <XAxis type="number" />
-
-                      <YAxis
-                        dataKey="name"
-                        type="category"
-                        width={150}
-                      />
-
-                      <Tooltip />
-
-                      <Bar
-                        dataKey="count"
-                        fill="hsl(var(--primary))"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            )}
+                  <p>
+                    Most frequently reported symptom:{" "}
+                    <strong className="text-foreground">
+                      {stats.mostCommonSymptom}
+                    </strong>
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
