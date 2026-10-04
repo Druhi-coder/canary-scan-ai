@@ -1,6 +1,6 @@
 {
   "model_type": "GradientBoostingClassifier",
-  "auc_test": 0.9817,
+  "auc_test": 0.9814,
   "cv_auc_mean": 0.9467,
   "cv_auc_std": 0.0142,
   "ci_95": [0.9556, 0.9970],
