@@ -1,0 +1,1 @@
+-- Migration neutralized: legacy password reset removed for security.
