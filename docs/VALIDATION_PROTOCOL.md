@@ -21,7 +21,7 @@ Other components of the broader CANary system are not included in this validatio
 - Model: Gradient Boosting Classifier
 
 ### Performance Metrics
-- Test AUC-ROC: 0.9817  
+- Test AUC-ROC: 0.9814  
 - 5-Fold CV AUC: 0.9467 ± 0.0142  
 - 95% Confidence Interval: 0.9556 – 0.9970 (bootstrap, 1,000 resamples)
 
