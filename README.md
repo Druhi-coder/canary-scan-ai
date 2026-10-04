@@ -1,14 +1,15 @@
-```markdown # CANary: Investigational Risk Stratification & Explainable ML Framework
+# CANary: Investigational Risk Stratification & Explainable ML Framework
 
-[![License: **MIT**](https://img.shields.io/badge/License-**MIT**-blue.svg)](https://opensource.org/licenses/**MIT**) [![Vercel Deployment](https://img.shields.io/badge/Deployment-Live-success)](https://canary-scan-ai.vercel.app) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Druhi-coder/canary-scan-ai/blob/main/notebooks/canary_cancer_model.ipynb)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![Deployment](https://img.shields.io/badge/Deployment-Live-success)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]([https://colab.research.google.com/github/Druhi-coder/canary-scan-ai/blob/main/notebooks/canary_cancer_model.ipynb](https://colab.research.google.com/github/Druhi-coder/canary-scan-ai/blob/main/notebooks/canary_cancer_model.ipynb))
 
-CANary is an investigational computational oncology prototype designed for early-stage pancreatic ductal adenocarcinoma (**PDAC**) risk stratification using non-invasive urinary biomarkers, paired with a **SEER**-calibrated Bayesian prior engine for exploratory multi-cancer risk assessment[cite: 1].
+CANary is an investigational computational oncology prototype designed for early-stage pancreatic ductal adenocarcinoma (PDAC) risk stratification using non-invasive urinary biomarkers, paired with a SEER-calibrated Bayesian prior engine for exploratory multi-cancer risk assessment[cite: 1].
 
-> **Investigational Research Disclaimer:** > CANary is an academic research prototype developed for educational and experimental risk stratification[cite: 1]. It is not an **FDA**- or CE-cleared diagnostic device and is not intended for clinical diagnosis or decision-making[cite: 1]. Outputs represent statistical risk estimates, not definitive diagnostic classifications[cite: 1].
+> **Investigational Research Disclaimer:**  
+> CANary is an academic research prototype developed for educational and experimental risk stratification[cite: 1]. It is not an FDA- or CE-cleared diagnostic device and is not intended for clinical diagnosis or decision-making[cite: 1]. Outputs represent statistical risk estimates, not definitive diagnostic classifications[cite: 1].
 
-```
-
----
+___
 
 ## 1. Clinical Context & Motivation
 
