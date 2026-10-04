@@ -349,19 +349,21 @@ const Results = () => {
                   <Pie
                     data={pieData}
                     cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
+                    cy="45%"
+                    innerRadius={45}
+                    outerRadius={70}
+                    paddingAngle={3}
                     dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}%`}
-                    labelLine={false}
                   >
                     {pieData.map((_, i) => (
                       <Cell key={i} fill={CANCER_COLORS[i]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: any) => [`${v}%`, "Score"]} />
-                  <Legend />
+                  <Tooltip formatter={(v: any) => [`${v}%`, "Risk Score"]} />
+                  <Legend
+                    verticalAlign="bottom"
+                    formatter={(value, entry: any) => `${value} (${entry.payload.value}%)`}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
