@@ -1,8 +1,8 @@
 # CANary: Investigational Risk Stratification & Explainable ML Framework
 
-![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![Deployment](https://img.shields.io/badge/Deployment-Live-success)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]([https://colab.research.google.com/github/Druhi-coder/canary-scan-ai/blob/main/notebooks/canary_cancer_model.ipynb](https://colab.research.google.com/github/Druhi-coder/canary-scan-ai/blob/main/notebooks/canary_cancer_model.ipynb))
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Druhi-coder/canary-scan-ai/blob/main/LICENSE)
+[![Vercel Deployment](https://img.shields.io/badge/Deployment-Live%20App-success?logo=vercel)](https://canary-scan-ai.vercel.app)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Druhi-coder/canary-scan-ai/blob/main/notebooks/canary_cancer_model.ipynb)
 
 CANary is an investigational computational oncology prototype designed for early-stage pancreatic ductal adenocarcinoma (PDAC) risk stratification using non-invasive urinary biomarkers, paired with a SEER-calibrated Bayesian prior engine for exploratory multi-cancer risk assessment[cite: 1].
 
