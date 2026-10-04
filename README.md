@@ -1,397 +1,136 @@
-# CANary
-
-### An Explainable Machine Learning Framework for Non-Invasive Pancreatic Cancer Risk Stratification via Urinary Biomarkers
-
-> *"Research should not only produce accurate models—it should produce models that can be understood, reproduced, questioned, and improved."*
-
----
-
-> ## Disclaimer
->
-> CANary is an independent research project developed exclusively for scientific exploration and educational purposes.
->
-> It is **not** a medical device, has **not** been clinically validated, and should **never** be used for diagnosis, treatment, or clinical decision-making.
->
-> Every experiment contained in this repository should be interpreted solely as computational research.
-
----
-
-# Why CANary Exists
-
-Pancreatic ductal adenocarcinoma (PDAC) remains one of the most aggressive human cancers. The disease is frequently diagnosed only after it has progressed beyond stages where curative treatment is possible, contributing to one of the lowest long-term survival rates among major cancers.
-
-Over the last decade, machine learning has become increasingly capable of identifying complex relationships within biomedical datasets. Yet many published systems remain difficult to interpret, difficult to reproduce, or optimized almost exclusively for benchmark performance.
-
-High predictive accuracy alone is rarely sufficient for healthcare research.
-
-Researchers, clinicians, and future developers must also understand **why** a prediction was made, **how reliable** that prediction is, and **whether the computational methodology can be independently reproduced.**
-
-CANary was developed around that philosophy.
-
-Rather than asking,
-
-> *"Can another model achieve a marginally higher ROC-AUC?"*
-
-this project asks a different question:
-
-> **Can an explainable, transparent, and statistically validated machine learning pipeline provide meaningful insights for future pancreatic cancer research while remaining completely reproducible?**
-
-That question defines every design decision throughout this repository.
-
-# Live Demonstration
-
-An interactive research demonstration is available here:
-
-**https://canary-scan-ai.vercel.app**
-
-The complete research methodology, preprocessing pipeline, model training, statistical evaluation, and explainability analysis are available in the accompanying Jupyter notebook contained in this repository.
-
----
-
-# Installation
-
-Clone the repository:
-
-```bash
-git clone https://github.com/Druhi-coder/CANary.git
-cd CANary
-```
-
-Install the required dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Launch Jupyter Notebook:
-
-```bash
-jupyter notebook
-```
-
-Open the provided notebook and execute the cells sequentially to reproduce the reported experiments.
-
-___
-
-# Philosophy
-
-CANary was designed around five guiding principles.
-
-## 1. Explainability Before Complexity
-
-A model that cannot be understood has limited scientific value.
-
-Every prediction produced by CANary should be accompanied by interpretable feature contributions rather than functioning as an unexplained black box.
-
-This repository therefore integrates SHAP explainability directly into the experimental workflow.
-
----
-
-## 2. Reproducibility
-
-Scientific results should not depend on hidden notebook states or undocumented preprocessing steps.
-
-Every reported metric in this repository is generated directly from the accompanying notebook using a reproducible computational pipeline.
-
----
-
-## 3. Statistical Rigor
-
-Model evaluation extends beyond overall accuracy.
-
-CANary evaluates discrimination, calibration, confidence intervals, and multiple complementary performance metrics to provide a more complete understanding of model behaviour.
-
----
-
-## 4. Transparency
-
-Every computational model has limitations.
-
-Rather than hiding them, CANary explicitly documents methodological constraints, assumptions, and future directions.
-
----
-
-## 5. Accessibility
-
-The broader motivation behind this work is to explore computational approaches that may eventually contribute to accessible, non-invasive healthcare technologies.
-
-This repository represents one exploratory step toward that long-term vision.
-
----
-
-# Project Overview
-
-CANary is an explainable machine learning framework investigating non-invasive pancreatic cancer risk stratification using urinary biomarker data.
-
-The project integrates traditional machine learning, explainable artificial intelligence, statistical validation, and reproducible computational workflows into a single research pipeline.
-
-The repository includes:
-
-- Complete Jupyter Notebook implementation
-- Machine learning pipeline
-- GridSearchCV hyperparameter optimisation
-- SHAP explainability
-- Statistical evaluation
-- Calibration analysis
-- Bootstrap confidence intervals
-- Research manuscript
-- Generated figures
-- Exported evaluation metrics
-
-Everything required to reproduce the reported experiments is contained within this repository.
-
----
-
-# Repository Structure
-
-```text
-CANary/
-│
-├── notebook.ipynb                 # Complete research notebook
-├── research_paper.pdf             # Research manuscript
-├── assets/
-│   ├── roc_curve.png
-│   ├── calibration_comparison.png
-│   ├── confusion_matrix.png
-│   └── shap_summary.png
-├── requirements.txt               # Python dependencies
-├── README.md
-└── LICENSE
-```
-
-This repository contains all code, figures, and documentation necessary to reproduce the computational experiments reported in the accompanying research manuscript.
-
-___
-
-# Software Environment
-
-The computational experiments were developed using Python within Google Colab.
-
-Primary libraries include:
-
-- Python 3
-- Scikit-learn
-- NumPy
-- Pandas
-- Matplotlib
-- SHAP
-- Joblib
-- Jupyter Notebook / Google Colab
-
-All reported experiments can be reproduced using the accompanying notebook and the dependencies listed in `requirements.txt`.
-___
-
-# Methodology
-
-The computational workflow follows the pipeline below.
-
-```text
-Clinical Dataset
-        │
-        ▼
-Data Preprocessing
-        │
-        ▼
-Feature Engineering
-        │
-        ▼
-Train/Test Split
-        │
-        ▼
-GridSearchCV Hyperparameter Optimisation
-        │
-        ▼
-Gradient Boosting Classifier
-        │
-        ▼
-Performance Evaluation
-        │
-        ├── ROC-AUC
-        ├── Precision–Recall Analysis
-        ├── Calibration Analysis
-        ├── Bootstrap Confidence Intervals
-        ├── Confusion Matrix
-        └── SHAP Explainability
-```
-
-The primary objective is not merely to maximise predictive performance, but to produce a model whose behaviour can be inspected, interpreted, and reproduced.
-
----
-
-# Model Performance
-
-The final Gradient Boosting model demonstrated strong predictive performance on the held-out test dataset.
-
-<p align="center">
-<img src="assets/roc_curve.png" width="750">
-</p>
-
-| Metric | Performance |
-|---------|------------:|
-| ROC-AUC | **0.9814** |
-| PR-AUC | **0.9707** |
-| Sensitivity | **0.9000** |
-| Specificity | **0.9487** |
-| Precision | **0.9000** |
-| F1 Score | **0.9000** |
-| MCC | **0.8487** |
-| Balanced Accuracy | **0.9244** |
-| Brier Score | **0.0499** |
-
-These metrics should be interpreted within the context of the dataset used for experimentation and should not be considered evidence of clinical effectiveness.
-
----
-
-# Explainable Artificial Intelligence
-
-Interpretability forms one of the central objectives of CANary.
-
-Instead of treating predictions as opaque outputs, the framework applies SHAP (SHapley Additive exPlanations) to quantify the contribution of individual biomarkers and clinical variables.
-
-<p align="center">
-<img src="assets/shap_summary.png" width="750">
-</p>
-
-Understanding *why* a prediction occurs is often as important as the prediction itself, particularly within healthcare research.
-
----
-
-# Calibration
-
-Predictive confidence should reflect reality.
-
-Calibration analysis therefore evaluates whether predicted probabilities correspond to observed outcomes rather than simply measuring discrimination.
-
-<p align="center">
-<img src="assets/calibration_comparison.png" width="750">
-</p>
-
----
-
-# Classification Performance
-
-<p align="center">
-<img src="assets/confusion_matrix.png" width="550">
-</p>
-
-The confusion matrix provides a direct summary of classification outcomes on the held-out test dataset.
-
----
-
-# Reproducibility
-
-Every reported experiment contained in this repository can be reproduced using the provided notebook.
-
-The repository includes:
-
-- Model implementation
-- Hyperparameter configuration
-- Exported evaluation metrics
-- Saved trained model
-- Research manuscript
-- Generated figures
-
-Scientific reproducibility remains one of the primary objectives of this project.
-
----
-
-# Limitations
-
-CANary represents exploratory computational research.
-
-Current limitations include:
-
-- Evaluation using a single publicly available dataset.
-- No external multi-centre validation.
-- Retrospective computational analysis.
-- No prospective clinical evaluation.
-- Not intended for real-world medical deployment.
-
-These limitations should be considered when interpreting the reported results.
-
----
-
-# Future Directions
-
-Future research may include:
-
-- External validation using independent cohorts.
-- Multi-centre evaluation.
-- Decision Curve Analysis.
-- Additional biomarker integration.
-- Federated learning.
-- Deployment as an educational research platform.
-- Collaboration with clinical researchers.
-
----
-
-# Citation
-
-If this repository contributes to your research, please cite:
-
-> Druhi Sarupria.
->
-> **CANary: An Explainable Machine Learning Framework for Non-Invasive Pancreatic Cancer Risk Stratification via Urinary Biomarkers.**
->
-> 2026.
-
----
-
-# About the Author
-
-**Druhi Sarupria**
-
-Student Researcher
-
-Research interests include:
-
-- Artificial Intelligence
-- Computational Medicine
-- Explainable AI
-- Biomedical Machine Learning
-- Healthcare Innovation
-
----
-
-# Dataset
-
-CANary was developed using the publicly available urinary biomarker dataset introduced by Debernardi et al. (2020).
-
-Dataset summary:
-
-- Participants: 590
-- Positive (PDAC): 199
-- Negative (Healthy + Benign): 391
-
-Features used:
-
-- Age
-- Sex
-- Plasma CA19-9
-- Creatinine
-- LYVE1
-- REG1B
-- TFF1
-- REG1A
-
-The dataset used in this study is publicly available and was originally introduced by:
-
-**Debernardi, S., et al. (2020).**
-
-If you wish to reproduce the experiments exactly as described in the manuscript, please obtain the dataset from the original publication:
-
-https://doi.org/10.1371/journal.pmed.1003489
-
-Please refer to the original publication for complete dataset documentation, licensing information, and clinical methodology.
-
-___
-
-# Acknowledgements
-
-This project builds upon publicly available biomedical datasets and the open-source scientific ecosystem, including Scikit-learn, SHAP, NumPy, Pandas, Matplotlib, and Jupyter.
-
-The author gratefully acknowledges the researchers whose commitment to open scientific data made this work possible.
-
----
-
-> *"Good research is not measured solely by how accurately it predicts, but by how clearly it can be understood, reproduced, and improved."*
+CANary: Investigational Risk Stratification & Explainable ML Framework
+CANary is an investigational computational oncology prototype designed for early-stage pancreatic ductal adenocarcinoma (PDAC) risk stratification using non-invasive urinary biomarkers, paired with a SEER-calibrated Bayesian prior engine for exploratory multi-cancer risk assessment.   
+XML
+Investigational Research Disclaimer:
+
+CANary is an academic research prototype developed for educational and experimental risk stratification. It is not an FDA- or CE-cleared diagnostic device and is not intended for clinical diagnosis or decision-making. Outputs represent statistical risk estimates, not definitive diagnostic classifications.   
+XML
++ 2
+
+1. Clinical Context & Motivation
+Pancreatic ductal adenocarcinoma (PDAC) carries a 5-year relative survival rate under 12%, largely because over 80% of cases are diagnosed at late or metastatic stages (Stages III/IV). Current gold-standard diagnostic protocols rely on high-resolution imaging (triphasic CT/MRI) and invasive histopathology, which are clinically inaccessible for routine population screening.
+Serum CA 19-9 remains the sole FDA-cleared biomarker for monitoring treatment response, but it demonstrates significant limitations for initial screening:
+Approximately 7–10% of the population are Lewis antigen-negative (Le a-b-), lacking the 1,3/1,4-fucosyltransferase enzyme required to synthesize CA 19-9, yielding false negatives.
+CA 19-9 frequently exhibits non-specific elevations in benign biliary obstructions, gallstones, and pancreatitis.
+CANary investigates whether integrating multi-analyte non-invasive urinary protein panels (LYVE1, REG1B, TFF1, REG1A, and creatinine) alongside plasma CA 19-9 into an interpretable Gradient Boosting framework provides discriminative performance sufficient for primary-care triage and early risk stratification.   
+XML
+2. Model Architecture & Validation Performance
+Primary Model: Pancreatic GBC
+Architecture: Gradient Boosting Classifier (n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)   
+XML
+Interpretability: TreeExplainer via SHAP (SHapley Additive exPlanations)   
+XML
+Dataset: Debernardi et al. (2020) urinary biomarker cohort (PLOS Medicine, DOI: 10.1371/journal.pmed.1003489)   
+XML
+Cohort Composition: N = 590 patient records (199 PDAC, 391 benign hepatobiliary disease or healthy controls)   
+XML
+Validation Split: 80/20 stratified train/test split with 5-fold cross-validation   
+XML
+Held-Out Test Set Metrics
+Metric	Value	95% Confidence Interval
+ROC-AUC	0.9814	
+0.9556 – 0.9970 (1,000 bootstrap resamples)  
+XML
+
+PR-AUC	0.9707	
+—  
+XML
+
+Sensitivity (Recall)	90.00%	
+—  
+XML
+
+Specificity	94.87%	
+—  
+XML
+
+Precision	90.00%	
+—  
+XML
+
+F1 Score	0.9000	
+—  
+XML
+
+Balanced Accuracy	92.44%	
+—  
+XML
+
+Matthews Correlation (MCC)	0.8487	
+—  
+XML
+
+Brier Score (Calibration)	0.0499	
+—  
+XML
+
+5-Fold Cross-Validation AUC	0.9467 ± 0.0142	
+—  
+XML
+
+Biomarker Feature Weights (GBC Relative Importance)
+plasma_CA19_9 (0.5345): Primary tumor antigen burden indicator   
+XML
+LYVE1 (0.2486): Lymphatic vessel endothelial hyaluronan receptor-1; reflects extracellular matrix remodeling   
+XML
+creatinine (0.0643): Normalization baseline for renal excretion rate   
+XML
+REG1B (0.0477): Regenerating islet-derived protein 1-beta   
+XML
+TFF1 (0.0424): Trefoil factor 1   
+XML
+age (0.0381): Demographic baseline risk factor   
+XML
+REG1A (0.0196): Regenerating islet-derived protein 1-alpha   
+XML
+sex (0.0049): Gender incidence adjustment   
+XML
+3. Exploratory Bayesian Multi-Cancer Engine
+For colon and hematologic modules, where no validated single-analyte ML cohort was incorporated, the system executes an epidemiological Bayesian scoring pipeline (src/lib/predictionEngine.ts):   
+XML
+Bayesian Priors: Age-stratified baseline priors derived from National Cancer Institute SEER (Surveillance, Epidemiology, and End Results) incidence tables.   
+XML
+Evidence-Based Odds Ratios: Additive and multiplicative weights derived from PubMed meta-analyses (e.g., smoking OR 1.74 [Iodice et al.], new-onset diabetes OR 5.38 [Sharma et al.], IBD SIR 2.4 [Jess et al.]).   
+XML
+Syndromic Clusters: Compound interaction boosts for classic clinical presentation triads (e.g., Courvoisier triad: painless jaundice + weight loss + epigastric pain).   
+XML
+Risk Ceiling Compression: Sigmoid compression hard-capped at 78% (RISK_HARD_CAP = 0.78) to prevent artificial certainty.   
+XML
+4. Research Reproducibility & Colab
+The complete data preprocessing, cross-validation, hyperparameter tuning, ROC/PR curves, calibration plots, and SHAP analyses can be executed directly in Google Colab:   
+XML
+Jupyter Notebook: notebooks/canary_cancer_model.ipynb
+   
+XML
+Colab Link: Open in Google Colab
+5. Repository Structure
+assets/: ROC, confusion matrix, and SHAP visual outputs   
+XML
+docs/: Model specs, architecture, and validation protocol   
+XML
+MODEL.md: Canonical model parameters & feature weights   
+XML
+VALIDATION_PROTOCOL.md: Complete verification checklist   
+XML
+outreach/: Community health literacy context   
+XML
+notebooks/: Scikit-Learn training and evaluation pipeline   
+XML
+src/components/: React UI and interactive research widgets   
+XML
+src/lib/predictionEngine.ts: Bayesian prior & heuristic engine   
+XML
+src/lib/mlApi.ts: Validated pancreatic GBC API client   
+XML
+src/lib/validationMetrics.ts: Benchmark ground-truth constants   
+XML
+src/lib/riskWeights.ts: Meta-analysis odds ratios & SEER base rates   
+XML
+supabase/: Backend edge functions and database schema   
+XML
+6. Citation & References
+Debernardi, S., et al. (2020). A combination of urinary biomarkers improves early detection of pancreatic cancer. PLOS Medicine, 17(12), e1003489. DOI: 10.1371/journal.pmed.1003489   
+XML
+Lundberg, S. M., & Lee, S. I. (2017). A unified approach to interpreting model predictions. Advances in Neural Information Processing Systems (NeurIPS), 30.
+National Cancer Institute. SEER Cancer Statistics Review 1975–2020. Bethesda, MD.
+Sharma, A., et al. (2018). Model to Determine Risk of Pancreatic Cancer in Patients With New-Onset Diabetes. Gastroenterology, 155(3), 730-739.
